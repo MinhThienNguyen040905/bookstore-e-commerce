@@ -1,20 +1,44 @@
 import { useState } from "react";
 
-const gifts = ['candy', 'toys', 'soft drinks']
+const courses = [
+  {
+    id: 1,
+    name: 'HTML, CSS'
+  },
+  {
+    id: 2,
+    name: 'JavaScript'
+  },
+  {
+    id: 3,
+    name: 'ReactJS'
+  }
 
+]
 function App() {
 
-  const [gift, setGift] = useState()
-  const randomGift = () => {
-    const index = Math.floor(Math.random() * gifts.length)
-    console.log(gifts[index]);
-
+  const [checked, setChecked] = useState([])
+  const handlerChecked = (id) => {
+    setChecked((pre) => {
+      if (pre.includes(id)) return pre.filter(item => item !== id)
+      return [...pre, id]
+    })
   }
 
   return (
     <div className="App" style={{ padding: 30 }}>
-      <h1>Hello World</h1>
-      <button onClick={randomGift} >Random Gift</button>
+      {
+        courses.map(course => (
+          <div key={course.id}>
+            <input type="checkbox"
+              checked={checked.includes(course.id)}
+              onChange={() => handlerChecked(course.id)} />
+            {course.name}
+
+          </div>
+        ))
+      }
+      <button onClick={() => console.log(checked)}>Register</button>
     </div>
   );
 }
