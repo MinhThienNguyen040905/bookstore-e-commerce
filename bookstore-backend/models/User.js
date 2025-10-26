@@ -10,7 +10,6 @@ const User = sequelize.define('User', {
     address: DataTypes.STRING(255),
     phone: DataTypes.STRING(20),
     role: { type: DataTypes.ENUM('admin', 'customer'), defaultValue: 'customer', allowNull: false },
-    last_login: { type: DataTypes.DATE, allowNull: true }
 }, {
     hooks: {
         beforeCreate: async (user) => {
