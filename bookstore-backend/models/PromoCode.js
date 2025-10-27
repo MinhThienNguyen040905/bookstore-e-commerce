@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
 
 const PromoCode = sequelize.define('PromoCode', {
     promo_id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -9,4 +9,4 @@ const PromoCode = sequelize.define('PromoCode', {
     expiry_date: { type: DataTypes.DATE, allowNull: false },
 });
 
-module.exports = PromoCode;
+export default PromoCode;

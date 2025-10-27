@@ -1,13 +1,14 @@
-const { Op } = require('sequelize');
-const Order = require('../models/Order');
-const OrderItem = require('../models/OrderItem');
-const Book = require('../models/Book');
-const PromoCode = require('../models/PromoCode');
-const CartItem = require('../models/CartItem');
-const sequelize = require('../config/db');
+import { Op } from 'sequelize';
+import Order from '../models/Order.js';
+import OrderItem from '../models/OrderItem.js';
+import Book from '../models/Book.js';
+import PromoCode from '../models/PromoCode.js';
+import CartItem from '../models/CartItem.js';
+import sequelize from '../config/db.js';
+import User from '../models/User.js';
 
 // Tạo đơn hàng từ giỏ hàng
-exports.createOrder = async (req, res) => {
+const createOrder = async (req, res) => {
     const { promo_code, payment_method } = req.body;
     const transaction = await sequelize.transaction();
     try {
@@ -16,7 +17,10 @@ exports.createOrder = async (req, res) => {
             where: { user_id: req.user.user_id },
             include: [Book],
         });
-        if (!cartItems.length) return res.status(400).json({ msg: 'Cart is empty' });
+        if (!cartItems.length) {
+            await transaction.rollback();
+            return res.status(400).json({ msg: 'Cart is empty' });
+        }
 
         // Tính tổng giá
         let total_price = 0;
@@ -85,7 +89,7 @@ exports.createOrder = async (req, res) => {
 };
 
 // Lấy danh sách đơn hàng của user
-exports.getOrders = async (req, res) => {
+const getOrders = async (req, res) => {
     try {
         const orders = await Order.findAll({
             where: { user_id: req.user.user_id },
@@ -101,7 +105,7 @@ exports.getOrders = async (req, res) => {
 };
 
 // Lấy tất cả đơn hàng (admin)
-exports.getAllOrders = async (req, res) => {
+const getAllOrders = async (req, res) => {
     try {
         const orders = await Order.findAll({
             include: [
@@ -117,7 +121,7 @@ exports.getAllOrders = async (req, res) => {
 };
 
 // Cập nhật trạng thái đơn hàng (admin)
-exports.updateOrderStatus = async (req, res) => {
+const updateOrderStatus = async (req, res) => {
     const { order_id } = req.params;
     const { status } = req.body;
     try {
@@ -131,3 +135,5 @@ exports.updateOrderStatus = async (req, res) => {
         res.status(500).json({ err: err.message });
     }
 };
+
+export default { createOrder, getOrders, getAllOrders, updateOrderStatus };

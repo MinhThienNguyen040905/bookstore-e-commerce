@@ -1,15 +1,16 @@
-const express = require('express');
-const sequelize = require('./config/db');
-const app = express();
-require('dotenv').config();
+import express from 'express';
+import sequelize from './config/db.js';
+import 'dotenv/config';
 
 // Routes
-const userRoutes = require('./routes/users');
-const bookRoutes = require('./routes/books');
-const cartRoutes = require('./routes/cart');
-const orderRoutes = require('./routes/orders');
-const reviewRoutes = require('./routes/reviews');
-const promoRoutes = require('./routes/promos');
+import userRoutes from './routes/users.js';
+import bookRoutes from './routes/books.js';
+import cartRoutes from './routes/cart.js';
+import orderRoutes from './routes/orders.js';
+import reviewRoutes from './routes/reviews.js';
+import promoRoutes from './routes/promos.js';
+
+const app = express();
 
 app.use(express.json());
 
@@ -22,8 +23,16 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/promos', promoRoutes);
 
 // Sync DB and start server
-sequelize.sync({ alter: true }).then(() => {
-    app.listen(process.env.PORT, () => {
-        console.log(`Server running on port ${process.env.PORT}`);
-    });
-}).catch(err => console.log('Error: ' + err));
+async function start() {
+    try {
+        await sequelize.sync({ alter: true });
+        const port = process.env.PORT || 3000;
+        app.listen(port, () => {
+            console.log(`Server running on port ${port}`);
+        });
+    } catch (err) {
+        console.error('Error: ' + err);
+    }
+}
+
+start();

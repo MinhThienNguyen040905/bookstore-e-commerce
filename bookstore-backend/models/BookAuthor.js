@@ -1,11 +1,11 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const Book = require('./Book');
-const Author = require('./Author');
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
+import Book from './Book.js';
+import Author from './Author.js';
 
 const BookAuthor = sequelize.define('BookAuthor', {}, { timestamps: false });
 
 Book.belongsToMany(Author, { through: BookAuthor });
 Author.belongsToMany(Book, { through: BookAuthor });
 
-module.exports = BookAuthor;
+export default BookAuthor;

@@ -1,7 +1,7 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const User = require('./User');
-const Book = require('./Book');
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
+import User from './User.js';
+import Book from './Book.js';
 
 const CartItem = sequelize.define('CartItem', {
     quantity: { type: DataTypes.INTEGER, allowNull: false, validate: { min: 1 } },
@@ -16,4 +16,4 @@ CartItem.belongsTo(User, { foreignKey: 'user_id' });
 Book.hasMany(CartItem, { foreignKey: 'book_id' });
 CartItem.belongsTo(Book, { foreignKey: 'book_id' });
 
-module.exports = CartItem;
+export default CartItem;

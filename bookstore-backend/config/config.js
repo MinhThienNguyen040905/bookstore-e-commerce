@@ -1,7 +1,15 @@
-const fs = require('fs');
-require('dotenv').config();
+import fs from 'fs';
+import 'dotenv/config';
 
-module.exports = {
+function makeDialectOptions() {
+    // Trả về object ssl chỉ khi có path, tránh lỗi đọc file nếu không thiết lập
+    if (process.env.SSL_CA_PATH) {
+        return { ssl: { ca: fs.readFileSync(process.env.SSL_CA_PATH) } };
+    }
+    return {};
+}
+
+export default {
     development: {
         username: process.env.DB_USER,
         password: process.env.DB_PASS,
@@ -9,11 +17,7 @@ module.exports = {
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
         dialect: 'mysql',
-        dialectOptions: {
-            ssl: {
-                ca: fs.readFileSync(process.env.SSL_CA_PATH),
-            },
-        },
+        dialectOptions: makeDialectOptions(),
     },
     production: {
         username: process.env.DB_USER,
@@ -22,10 +26,6 @@ module.exports = {
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
         dialect: 'mysql',
-        dialectOptions: {
-            ssl: {
-                ca: fs.readFileSync(process.env.SSL_CA_PATH),
-            },
-        },
+        dialectOptions: makeDialectOptions(),
     },
 };

@@ -1,10 +1,10 @@
-const { Op } = require('sequelize');
-const Review = require('../models/Review');
-const Book = require('../models/Book');
-const User = require('../models/User');
+import { Op } from 'sequelize';
+import Review from '../models/Review.js';
+import Book from '../models/Book.js';
+import User from '../models/User.js';
 
 // Thêm đánh giá
-exports.addReview = async (req, res) => {
+const addReview = async (req, res) => {
     const { book_id, rating, comment } = req.body;
     try {
         // Kiểm tra sách và user
@@ -30,7 +30,7 @@ exports.addReview = async (req, res) => {
 };
 
 // Lấy đánh giá theo sách
-exports.getReviewsByBook = async (req, res) => {
+const getReviewsByBook = async (req, res) => {
     const { book_id } = req.params;
     try {
         const reviews = await Review.findAll({
@@ -44,7 +44,7 @@ exports.getReviewsByBook = async (req, res) => {
 };
 
 // Lấy tất cả đánh giá (admin)
-exports.getAllReviews = async (req, res) => {
+const getAllReviews = async (req, res) => {
     try {
         const reviews = await Review.findAll({
             include: [
@@ -57,3 +57,5 @@ exports.getAllReviews = async (req, res) => {
         res.status(500).json({ err: err.message });
     }
 };
+
+export default { addReview, getReviewsByBook, getAllReviews };

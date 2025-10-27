@@ -1,10 +1,9 @@
-const { Op } = require('sequelize');
-const CartItem = require('../models/CartItem');
-const Book = require('../models/Book');
-const User = require('../models/User');
+import CartItem from '../models/CartItem.js';
+import Book from '../models/Book.js';
+import User from '../models/User.js';
 
 // Thêm sách vào giỏ hàng
-exports.addToCart = async (req, res) => {
+const addToCart = async (req, res) => {
     const { book_id, quantity } = req.body;
     try {
         // Kiểm tra sách tồn tại
@@ -32,7 +31,7 @@ exports.addToCart = async (req, res) => {
 };
 
 // Cập nhật số lượng item trong giỏ
-exports.updateCart = async (req, res) => {
+const updateCart = async (req, res) => {
     const { book_id, quantity } = req.body;
     try {
         const cartItem = await CartItem.findOne({ where: { user_id: req.user.user_id, book_id } });
@@ -56,7 +55,7 @@ exports.updateCart = async (req, res) => {
 };
 
 // Xóa item khỏi giỏ
-exports.removeFromCart = async (req, res) => {
+const removeFromCart = async (req, res) => {
     const { book_id } = req.params;
     try {
         const cartItem = await CartItem.findOne({ where: { user_id: req.user.user_id, book_id } });
@@ -70,7 +69,7 @@ exports.removeFromCart = async (req, res) => {
 };
 
 // Lấy giỏ hàng của user
-exports.getCart = async (req, res) => {
+const getCart = async (req, res) => {
     try {
         const cartItems = await CartItem.findAll({
             where: { user_id: req.user.user_id },
@@ -81,3 +80,5 @@ exports.getCart = async (req, res) => {
         res.status(500).json({ err: err.message });
     }
 };
+
+export default { addToCart, updateCart, removeFromCart, getCart };

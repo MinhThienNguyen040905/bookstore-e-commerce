@@ -1,7 +1,7 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const User = require('./User');
-const PromoCode = require('./PromoCode');
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
+import User from './User.js';
+import PromoCode from './PromoCode.js';
 
 const Order = sequelize.define('Order', {
     order_id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -15,4 +15,4 @@ User.hasMany(Order, { foreignKey: 'user_id' });
 Order.belongsTo(User, { foreignKey: 'user_id' });
 Order.belongsTo(PromoCode, { foreignKey: 'promo_id', allowNull: true });
 
-module.exports = Order;
+export default Order;

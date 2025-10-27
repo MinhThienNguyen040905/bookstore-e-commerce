@@ -1,8 +1,8 @@
-const { Op } = require('sequelize');
-const PromoCode = require('../models/PromoCode');
+import { Op } from 'sequelize';
+import PromoCode from '../models/PromoCode.js';
 
 // Thêm mã khuyến mãi (admin)
-exports.addPromo = async (req, res) => {
+const addPromo = async (req, res) => {
     const { code, discount_percent, min_amount, expiry_date } = req.body;
     try {
         const promo = await PromoCode.create({
@@ -18,7 +18,7 @@ exports.addPromo = async (req, res) => {
 };
 
 // Lấy danh sách mã khuyến mãi (còn hiệu lực)
-exports.getPromos = async (req, res) => {
+const getPromos = async (req, res) => {
     try {
         const promos = await PromoCode.findAll({
             where: { expiry_date: { [Op.gte]: new Date() } },
@@ -30,7 +30,7 @@ exports.getPromos = async (req, res) => {
 };
 
 // Lấy tất cả mã khuyến mãi (admin)
-exports.getAllPromos = async (req, res) => {
+const getAllPromos = async (req, res) => {
     try {
         const promos = await PromoCode.findAll();
         res.json(promos);
@@ -38,3 +38,5 @@ exports.getAllPromos = async (req, res) => {
         res.status(500).json({ err: err.message });
     }
 };
+
+export default { addPromo, getPromos, getAllPromos };

@@ -1,7 +1,7 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const User = require('./User');
-const Book = require('./Book');
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
+import User from './User.js';
+import Book from './Book.js';
 
 const Review = sequelize.define('Review', {
     review_id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -19,4 +19,4 @@ Review.belongsTo(User, { foreignKey: 'user_id' });
 Book.hasMany(Review, { foreignKey: 'book_id' });
 Review.belongsTo(Book, { foreignKey: 'book_id' });
 
-module.exports = Review;
+export default Review;

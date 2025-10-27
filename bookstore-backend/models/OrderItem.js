@@ -1,7 +1,7 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const Order = require('./Order');
-const Book = require('./Book');
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
+import Order from './Order.js';
+import Book from './Book.js';
 
 const OrderItem = sequelize.define('OrderItem', {
     order_item_id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -14,4 +14,4 @@ OrderItem.belongsTo(Order);
 Book.hasMany(OrderItem);
 OrderItem.belongsTo(Book);
 
-module.exports = OrderItem;
+export default OrderItem;

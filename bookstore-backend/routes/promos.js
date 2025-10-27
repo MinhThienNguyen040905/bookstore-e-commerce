@@ -1,10 +1,10 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const promoController = require('../controllers/promoController');
-const { auth, adminAuth } = require('../middleware/auth');
+import promoController from '../controllers/promoController.js';
+import { auth, adminAuth } from '../middleware/auth.js';
 
 router.post('/', auth, adminAuth, promoController.addPromo);
 router.get('/', promoController.getPromos);
 router.get('/all', auth, adminAuth, promoController.getAllPromos);
 
-module.exports = router;
+export default router;
