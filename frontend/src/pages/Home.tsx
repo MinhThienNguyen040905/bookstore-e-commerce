@@ -1,0 +1,100 @@
+// src/pages/Home.tsx
+import { BookSlider } from '@/components/book/BookSlider';
+import { Header } from '@/layouts/Header';
+import { Footer } from '@/layouts/Footer';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { MapPin, Truck, Star, BookOpen } from 'lucide-react';
+
+const featuredAuthor = {
+    name: "Eric-Emmanuel Schmitt",
+    bio: "Eric-Emmanuel Schmitt has been awarded more than 20 literary prizes and distinctions, and in 2001 he received the title of Chevalier des Arts et des Lettres. His books have been translated into over 40 languages.",
+    image: "/author.jpg",
+    books: 30,
+};
+
+const books = [
+    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
+    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" },
+    // ... thêm 10+ sách
+];
+
+export default function Home() {
+    return (
+        <>
+            <Header />
+
+            <main className="container mx-auto px-4 py-8">
+                {/* Author Section */}
+                <section className="mb-16">
+                    <div className="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <span className="text-sm bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Author of august</span>
+                            <h1 className="text-4xl font-bold mt-2">{featuredAuthor.name}</h1>
+                            <p className="text-muted-foreground mt-4">{featuredAuthor.bio}</p>
+                            <Button className="mt-6 bg-purple-600 hover:bg-purple-700">
+                                View his books
+                            </Button>
+                        </div>
+                        <div className="relative">
+                            <img src="/book-cover.jpg" alt="Book" className="rounded-lg shadow-xl" />
+                            <div className="absolute -top-4 -right-4 bg-purple-600 text-white p-4 rounded-lg">
+                                <p className="text-sm">AUTOGRAPHED BOOKS + 30% DISCOUNT</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Benefits */}
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+                    <div className="flex items-center gap-3">
+                        <Truck className="w-8 h-8 text-purple-600" />
+                        <div>
+                            <h3 className="font-semibold">Free shipping over 50$</h3>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Star className="w-8 h-8 text-purple-600" />
+                        <div>
+                            <h3 className="font-semibold">Save with loyalty points</h3>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <BookOpen className="w-8 h-8 text-purple-600" />
+                        <div>
+                            <h3 className="font-semibold">Read a few pages</h3>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Book Sliders */}
+                <BookSlider title="Selected for you" books={books} />
+                <BookSlider title="You must buy it now" books={books} />
+
+                {/* Newsletter */}
+                <section className="my-16 bg-gray-50 rounded-2xl p-8">
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h2 className="text-2xl font-bold mb-4">Did you know us?</h2>
+                            <p className="text-muted-foreground">
+                                We are about books and our purpose is to show you the book who can change your life
+                                or distract you from the real world in a better one.
+                                If you are about books, you must subscribe to our newsletter.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <Input placeholder="Your name" />
+                            <Input placeholder="Your e-mail" type="email" />
+                            <Button className="bg-purple-600 hover:bg-purple-700">Subscribe</Button>
+                        </div>
+                    </div>
+                    <div className="mt-8">
+                        <img src="/map.png" alt="Map" className="w-full rounded-lg" />
+                    </div>
+                </section>
+            </main>
+
+            <Footer />
+        </>
+    );
+}
