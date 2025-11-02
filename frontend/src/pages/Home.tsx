@@ -14,16 +14,16 @@ const featuredAuthor = {
 };
 
 const books = [
-    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
-    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" },
-    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
-    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" },
-    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
-    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" },
-    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
-    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" },
-    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
-    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" }
+    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" }
     // ... thêm 10+ sách
 ];
 
