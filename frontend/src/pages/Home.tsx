@@ -77,11 +77,12 @@ export default function Home() {
 
                 {/* Book Sliders */}
                 <BookSlider title="Selected for you" books={books} />
+                <div className='h-20'></div>
                 <BookSlider title="You must buy it now" books={books} />
 
                 {/* Newsletter */}
-                <section className="my-16 bg-gray-50 rounded-2xl p-8">
-                    <div className="grid md:grid-cols-2 gap-8">
+                <section className="my-16 bg-gray-50 rounded-2xl p-8 flex gap-8">
+                    <div className="grid md:grid-rows-2 gap-8">
                         <div>
                             <h2 className="text-2xl font-bold mb-4">Did you know us?</h2>
                             <p className="text-muted-foreground">
@@ -97,7 +98,7 @@ export default function Home() {
                         </div>
                     </div>
                     <div className="mt-8">
-                        <img src="/The-map-of-Ho-chi-Minh-Citys-District-1.jpg" alt="Map" className="max-w-100 max-h-100  rounded-lg" />
+                        <img src="/The-map-of-Ho-chi-Minh-Citys-District-1.jpg" alt="Map" className="max-w-150 max-h-150  rounded-lg" />
                     </div>
                 </section>
             </main>
