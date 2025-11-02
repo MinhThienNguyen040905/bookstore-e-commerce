@@ -16,6 +16,14 @@ const featuredAuthor = {
 const books = [
     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" },
+    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
+    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" },
+    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
+    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" },
+    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
+    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" },
+    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/book1.jpg" },
+    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/book2.jpg" }
     // ... thêm 10+ sách
 ];
 
@@ -37,7 +45,7 @@ export default function Home() {
                             </Button>
                         </div>
                         <div className="relative">
-                            <img src="/book-cover.jpg" alt="Book" className="rounded-lg shadow-xl" />
+                            <img src="/How-to-Win-Friends-Influence-People-Book-summary.png" alt="Book" className="rounded-lg shadow-xlcd" />
                             <div className="absolute -top-4 -right-4 bg-purple-600 text-white p-4 rounded-lg">
                                 <p className="text-sm">AUTOGRAPHED BOOKS + 30% DISCOUNT</p>
                             </div>
@@ -89,7 +97,7 @@ export default function Home() {
                         </div>
                     </div>
                     <div className="mt-8">
-                        <img src="/map.png" alt="Map" className="w-full rounded-lg" />
+                        <img src="/The-map-of-Ho-chi-Minh-Citys-District-1.jpg" alt="Map" className="max-w-100 max-h-100  rounded-lg" />
                     </div>
                 </section>
             </main>

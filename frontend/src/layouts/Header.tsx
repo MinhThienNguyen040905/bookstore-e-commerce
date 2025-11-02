@@ -53,7 +53,7 @@ export function Header() {
                                 className="pl-10 w-64"
                             />
                         </div>
-                        <Button variant="outline" className="hidden md:flex items-center gap-2">
+                        <Button >
                             <Phone className="w-4 h-4" />
                             +445 87 999 000
                         </Button>
