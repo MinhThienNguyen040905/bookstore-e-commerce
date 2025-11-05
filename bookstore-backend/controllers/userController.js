@@ -1,6 +1,8 @@
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
+import Crypto from 'crypto';
+import Session from '../models/Session.js';
 import { Op } from 'sequelize';
 import { ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL } from '../constants/auth.js';
 
@@ -21,44 +23,33 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // 1. Tìm user theo email
         const user = await User.findOne({ where: { email } });
-        if (!user) {
+        if (!user || !(await user.validPassword(password))) {
             return res.status(401).json({ msg: 'Invalid credentials' });
         }
 
-        // 2. Kiểm tra mật khẩu
-        const isValidPassword = await user.validPassword(password);
-        if (!isValidPassword) {
-            return res.status(401).json({ msg: 'Invalid credentials' });
-        }
-
-        // 3. Tạo access token (JWT)
         const accessToken = jwt.sign(
             { user_id: user.user_id, role: user.role },
             process.env.JWT_SECRET,
-            { expiresIn: Math.floor(ACCESS_TOKEN_TTL / 1000) } // chuyển ms sang giây
+            { expiresIn: Math.floor(ACCESS_TOKEN_TTL / 1000) }
         );
 
-        // 4. Tạo refresh token (ngẫu nhiên, không phải JWT)
+        // ← DÒNG NÀY BÂY GIỜ HOẠT ĐỘNG
         const refreshToken = Crypto.randomBytes(64).toString('hex');
 
-        // 5. Lưu session vào DB
         await Session.create({
-            user_id: user.user_id,     // Sửa: user_id (không phải userId)
-            refresh_token: refreshToken, // Sửa: refresh_token
+            user_id: user.user_id,
+            refresh_token: refreshToken,
             expires_at: new Date(Date.now() + REFRESH_TOKEN_TTL),
         });
 
-        // 6. Gửi refresh token qua cookie (httpOnly, secure)
         res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,     // Chỉ server đọc được
-            secure: true,       // Chỉ gửi qua HTTPS
-            sameSite: 'none',   // Cho phép cross-site (frontend/backend khác domain)
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
             maxAge: REFRESH_TOKEN_TTL,
         });
 
-        // 7. Trả về access token + thông tin user
         res.json({
             msg: 'Login successful',
             accessToken,
