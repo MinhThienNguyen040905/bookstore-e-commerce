@@ -1,7 +1,8 @@
 // models/Session.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const User = require('./User');
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
+import User from './User.js';
+
 
 const Session = sequelize.define('Session', {
     session_id: {
@@ -19,7 +20,7 @@ const Session = sequelize.define('Session', {
         onDelete: 'CASCADE' // Xóa session nếu user bị xóa
     },
     refresh_token: {
-        type: DataTypes.TEXT,
+        type: DataTypes.STRING(500),
         allowNull: false
     },
     expires_at: {
@@ -36,8 +37,6 @@ const Session = sequelize.define('Session', {
     ]
 });
 
-// Quan hệ
-User.hasMany(Session, { foreignKey: 'user_id', onDelete: 'CASCADE' });
-Session.belongsTo(User, { foreignKey: 'user_id' });
 
-module.exports = Session;
+
+export default Session;

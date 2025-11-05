@@ -1,6 +1,8 @@
+import './models/associations.js';
 import express from 'express';
 import sequelize from './config/db.js';
 import 'dotenv/config';
+
 
 // Routes
 import userRoutes from './routes/users.js';

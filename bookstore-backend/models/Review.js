@@ -1,7 +1,5 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
-import User from './User.js';
-import Book from './Book.js';
 
 const Review = sequelize.define('Review', {
     review_id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -14,9 +12,5 @@ const Review = sequelize.define('Review', {
     },
 });
 
-User.hasMany(Review, { foreignKey: 'user_id' });
-Review.belongsTo(User, { foreignKey: 'user_id' });
-Book.hasMany(Review, { foreignKey: 'book_id' });
-Review.belongsTo(Book, { foreignKey: 'book_id' });
 
 export default Review;
