@@ -1,8 +1,10 @@
 import { Op } from 'sequelize';
+import sequelize from '../config/db.js';
 import Book from '../models/Book.js';
 import Author from '../models/Author.js';
 import Genre from '../models/Genre.js';
 import Publisher from '../models/Publisher.js';
+import Review from '../models/Review.js';
 import cloudinary from '../cloudinary.js';
 import multer from 'multer';
 
@@ -49,7 +51,100 @@ const getBooks = async (req, res) => {
     }
 };
 
+const getNewReleases = async (req, res) => {
+    try {
+        const books = await Book.findAll({
+            order: [['release_date', 'DESC']],
+            limit: 10,
+            attributes: ['book_id', 'title', 'cover_image', 'release_date', 'price'],
+            include: [
+                {
+                    model: Author,
+                    attributes: ['author_id', 'name'],
+                    through: { attributes: [] }
+                }
+            ]
+        });
+
+        const results = books.map(book => ({
+            id: book.book_id,
+            title: book.title,
+            cover: book.cover_image,
+            price: Number(book.price),
+            authors: book.Authors.map(a => a.name).join(', ')
+        }))
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ err: err.message });
+    }
+}
+
+const getTopRatedBooks = async (req, res) => {
+    try {
+        const books = await Book.findAll({
+            limit: 10,
+            attributes: [
+                'book_id',
+                'title',
+                'cover_image',
+                'price',
+                [sequelize.fn('AVG', sequelize.col('Reviews.rating')), 'avgRating']
+            ],
+            include: [
+                {
+                    model: Author,
+                    attributes: ['name'],
+                    through: { attributes: [] }
+                },
+                {
+                    model: Review,
+                    attributes: [] // Không trả về review chi tiết, nhưng JOIN để tính AVG
+                }
+            ],
+            group: ['Book.book_id', 'Authors.author_id'],
+            order: [[sequelize.fn('AVG', sequelize.col('Reviews.rating')), 'DESC']],
+            subQuery: false,
+            //    raw: true // Trả về dữ liệu thô để dễ map
+        });
+
+        // Định dạng lại JSON (đẹp + có số sao)
+        const result = books.map(book => ({
+            id: book.book_id,
+            title: book.title,
+            cover: book.cover_image,
+            price: Number(book.price),
+            avgRating: Number(book.avgRating || 0).toFixed(1),
+            authors: book.Authors.map(a => a.name).join(', ')
+        }));
+
+        res.json(result);
+    } catch (err) {
+        console.error('Lỗi lấy top sách:', err);
+        res.status(500).json({ msg: 'Lỗi server' });
+    }
+};
+
+const getBookById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const book = await Book.findByPk(
+            id,
+            {
+                include: [
+                    { model: Author, through: { attributes: [] } },
+                    { model: Genre, through: { attributes: [] } },
+                    { model: Publisher },
+                    { model: Review }
+                ]
+            });
+        if (!book) return res.status(404).json({ msg: 'Book not found' });
+        res.json(book);
+    } catch (err) {
+        res.status(500).json({ err: err.message });
+    }
+}
+
 // Update, delete tương tự...
 // Ví dụ: exports.updateBook = ... ; exports.deleteBook = ...
 
-export default { uploadCover, addBook, getBooks };
+export default { uploadCover, addBook, getBooks, getNewReleases, getTopRatedBooks, getBookById };

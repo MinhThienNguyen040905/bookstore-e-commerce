@@ -27,7 +27,7 @@ app.use('/api/promos', promoRoutes);
 // Sync DB and start server
 async function start() {
     try {
-        await sequelize.sync({ alter: true });
+        //   await sequelize.sync({ alter: true });
         const port = process.env.PORT || 3000;
         app.listen(port, () => {
             console.log(`Server running on port ${port}`);
