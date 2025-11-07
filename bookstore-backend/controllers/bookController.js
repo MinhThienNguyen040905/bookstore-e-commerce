@@ -88,33 +88,41 @@ const getTopRatedBooks = async (req, res) => {
                 'title',
                 'cover_image',
                 'price',
-                [sequelize.fn('AVG', sequelize.col('Reviews.rating')), 'avgRating']
+                [sequelize.fn('AVG', sequelize.col('Reviews.rating')), 'avgRating'],
+                [sequelize.fn('COUNT', sequelize.col('Reviews.review_id')), 'totalReviews'],
+                [sequelize.fn('GROUP_CONCAT', sequelize.literal('DISTINCT `Authors`.`name`')), 'authorsNames'] // THÊM DISTINCT
             ],
             include: [
                 {
                     model: Author,
-                    attributes: ['name'],
+                    attributes: [],
                     through: { attributes: [] }
                 },
                 {
                     model: Review,
-                    attributes: [] // Không trả về review chi tiết, nhưng JOIN để tính AVG
+                    attributes: [],
+                    required: false
                 }
             ],
-            group: ['Book.book_id', 'Authors.author_id'],
+            group: ['Book.book_id'],
+            having: sequelize.where(
+                sequelize.fn('COUNT', sequelize.col('Reviews.review_id')),
+                '>=',
+                1
+            ),
             order: [[sequelize.fn('AVG', sequelize.col('Reviews.rating')), 'DESC']],
             subQuery: false,
-            //    raw: true // Trả về dữ liệu thô để dễ map
+            raw: true
         });
 
-        // Định dạng lại JSON (đẹp + có số sao)
         const result = books.map(book => ({
             id: book.book_id,
             title: book.title,
             cover: book.cover_image,
             price: Number(book.price),
             avgRating: Number(book.avgRating || 0).toFixed(1),
-            authors: book.Authors.map(a => a.name).join(', ')
+            totalReviews: Number(book.totalReviews || 0),
+            authors: book.authorsNames ? book.authorsNames.split(',').map(name => name.trim()).join(', ') : '' // Chuỗi, không mản
         }));
 
         res.json(result);

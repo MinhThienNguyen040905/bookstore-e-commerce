@@ -9,3 +9,11 @@ export interface Book {
     isFeatured?: boolean;
     category?: string;
 }
+
+export interface CardBook {
+    id: number;
+    title: string;
+    author: string;
+    price: number;
+    cover: string;
+}

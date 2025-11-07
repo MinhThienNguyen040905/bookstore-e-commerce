@@ -2,6 +2,8 @@ import './models/associations.js';
 import express from 'express';
 import sequelize from './config/db.js';
 import 'dotenv/config';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
 
 
 // Routes
@@ -15,6 +17,8 @@ import promoRoutes from './routes/promos.js';
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
 // Mount routes
 app.use('/api/users', userRoutes);
