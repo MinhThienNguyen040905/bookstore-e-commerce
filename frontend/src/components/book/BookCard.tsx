@@ -2,11 +2,11 @@
 import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
-import type { Book } from '@/types/book';
+import type { CardBook } from '@/types/book';
 import { cn } from '@/lib/utils';
 
 interface BookCardProps {
-    book: Book;
+    book: CardBook;
     className?: string;
 }
 
@@ -21,11 +21,11 @@ export function BookCard({ book, className }: BookCardProps) {
                     alt={book.title}
                     className="aspect-[3/4] w-full object-cover transition-transform group-hover:scale-105"
                 />
-                {book.discount && (
+                {/* {book.discount && (
                     <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
                         -{book.discount}%
                     </span>
-                )}
+                )} */}
                 <button className="absolute top-2 right-2 p-2 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                     <Heart className="w-4 h-4" />
                 </button>

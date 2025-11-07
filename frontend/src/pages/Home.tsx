@@ -4,7 +4,9 @@ import { Header } from '@/layouts/Header';
 import { Footer } from '@/layouts/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, Truck, Star, BookOpen } from 'lucide-react';
+import { Truck, Star, BookOpen } from 'lucide-react';
+import { useNewReleasesBooks, useTopRatedBooks } from '@/hooks/useBooks';
+import { LoadingSpinner } from '@/components/common/LoadingsSpinner';
 
 const featuredAuthor = {
     name: "Eric-Emmanuel Schmitt",
@@ -13,21 +15,27 @@ const featuredAuthor = {
     books: 30,
 };
 
-const books = [
-    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-    { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-    { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" }
-    // ... thêm 10+ sách
-];
+// const books = [
+//     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+//     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+//     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+//     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+//     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+//     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+//     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+//     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+//     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
+//     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" }
+//     // ... thêm 10+ sách
+// ];
 
 export default function Home() {
+
+    const { data: newReleasesBooks, isLoading: loadingNewRelease, error: errorNewReleases } = useNewReleasesBooks();
+    const { data: topRatedBooks, isLoading: loadingTopRated, error: errorTopRated } = useTopRatedBooks();
+
+    if (loadingNewRelease || loadingTopRated) return <LoadingSpinner />;  // Hoặc full page loader
+    if (errorNewReleases || errorTopRated) return <p>Error loading books: {(errorNewReleases || errorTopRated)?.message}</p>;
     return (
         <>
             <Header />
@@ -76,9 +84,9 @@ export default function Home() {
                 </section>
 
                 {/* Book Sliders */}
-                <BookSlider title="Selected for you" books={books} />
+                <BookSlider title="Selected for you" books={newReleasesBooks || []} />
                 <div className='h-20'></div>
-                <BookSlider title="You must buy it now" books={books} />
+                <BookSlider title="You must buy it now" books={topRatedBooks || []} />
 
                 {/* Newsletter */}
                 <section className="my-16 bg-gray-50 rounded-2xl p-8 flex gap-8">

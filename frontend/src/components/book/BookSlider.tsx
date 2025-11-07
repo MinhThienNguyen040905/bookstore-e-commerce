@@ -1,12 +1,12 @@
 // src/components/book/BookSlider.tsx
 import { BookCard } from './BookCard';
-import type { Book } from '@/types/book';
+import type { CardBook } from '@/types/book';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef } from 'react';
 
 interface BookSliderProps {
     title: string;
-    books: Book[];
+    books: CardBook[];
 }
 
 export function BookSlider({ title, books }: BookSliderProps) {

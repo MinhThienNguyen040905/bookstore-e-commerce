@@ -1,7 +1,6 @@
 import type { CardBook } from '@/types/book';
 import api from './axios';
 
-
 // Get selected books
 export const getNewReleases = async (): Promise<CardBook[]> => {
     const response = await api.get('/books/new-releases');
