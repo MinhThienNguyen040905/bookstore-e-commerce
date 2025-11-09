@@ -1,7 +1,7 @@
 // src/components/book/BookDetailCard.tsx
 import { Button } from '@/components/ui/button';
 import { Star, Plus, Minus, ArrowRight, BookOpen } from 'lucide-react';
-import { useCartStore } from '@/store/useCartStore';
+import { useCartStore } from '@/features/cart/useCartStore';
 import type { Book } from '@/types/book';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';

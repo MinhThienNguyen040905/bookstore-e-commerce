@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Truck, Star, BookOpen } from 'lucide-react';
 import { useNewReleasesBooks, useTopRatedBooks } from '@/hooks/useBooks';
-import { LoadingSpinner } from '@/components/common/LoadingsSpinner';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 const featuredAuthor = {
     name: "Eric-Emmanuel Schmitt",

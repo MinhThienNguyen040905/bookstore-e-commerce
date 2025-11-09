@@ -2,7 +2,7 @@
 import { Search, ShoppingCart, Menu, Phone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/store/useCartStore';
+import { useCartStore } from '@/features/cart/useCartStore';
 import { Link } from 'react-router-dom';
 
 export function Header() {

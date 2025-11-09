@@ -1,6 +1,6 @@
 // src/features/cart/useCartStore.ts
 import { create } from 'zustand';
-import type { Book } from '../types/book';
+import type { Book } from '../../types/book';
 
 interface CartItem extends Book {
     quantity: number;
