@@ -5,6 +5,7 @@ import Author from '../models/Author.js';
 import Genre from '../models/Genre.js';
 import Publisher from '../models/Publisher.js';
 import Review from '../models/Review.js';
+import User from '../models/User.js';
 import cloudinary from '../cloudinary.js';
 import multer from 'multer';
 
@@ -135,22 +136,72 @@ const getTopRatedBooks = async (req, res) => {
 const getBookById = async (req, res) => {
     const { id } = req.params;
     try {
-        const book = await Book.findByPk(
-            id,
-            {
-                include: [
-                    { model: Author, through: { attributes: [] } },
-                    { model: Genre, through: { attributes: [] } },
-                    { model: Publisher },
-                    { model: Review }
-                ]
-            });
+        const book = await Book.findByPk(id, {
+            attributes: {
+                exclude: ['createdAt', 'updatedAt', 'publisher_id'] // Bỏ rác
+            },
+            include: [
+                {
+                    model: Author,
+                    attributes: ['name'],
+                    through: { attributes: [] }
+                },
+                {
+                    model: Genre,
+                    attributes: ['genre_id', 'name'],
+                    through: { attributes: [] }
+                },
+                {
+                    model: Publisher,
+                    attributes: ['name']
+                },
+                {
+                    model: Review,
+                    attributes: ['review_id', 'rating', 'comment', 'review_date'], // Giữ updatedAt
+                    include: [
+                        {
+                            model: User,
+                            attributes: ['user_id', 'name'] // Chỉ lấy id + name
+                        }
+                    ]
+                }
+            ]
+        });
+
         if (!book) return res.status(404).json({ msg: 'Book not found' });
-        res.json(book);
+
+        // Định dạng lại JSON siêu đẹp
+        const result = {
+            id: book.book_id,
+            title: book.title,
+            description: book.description,
+            price: Number(book.price),
+            stock: book.stock,
+            cover: book.cover_image,
+            releaseDate: book.release_date,
+            isbn: book.isbn,
+            publisher: book.Publisher?.name,
+            authors: book.Authors?.map(a => a.name).join(', '),
+            genres: book.Genres,
+            reviews: book.Reviews?.map(r => ({
+                id: r.review_id,
+                rating: r.rating,
+                comment: r.comment,
+                date: r.review_date,
+
+                user: {
+                    id: r.User?.user_id,
+                    name: r.User?.name
+                }
+            })) || []
+        };
+
+        res.json(result);
     } catch (err) {
-        res.status(500).json({ err: err.message });
+        console.error('Lỗi lấy sách:', err);
+        res.status(500).json({ msg: 'Lỗi server' });
     }
-}
+};
 
 // Update, delete tương tự...
 // Ví dụ: exports.updateBook = ... ; exports.deleteBook = ...
