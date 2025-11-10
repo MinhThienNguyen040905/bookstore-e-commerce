@@ -136,33 +136,20 @@ const getTopRatedBooks = async (req, res) => {
 const getBookById = async (req, res) => {
     const { id } = req.params;
     try {
+        // BƯỚC 1: Lấy sách + thông tin (không tính AVG)
         const book = await Book.findByPk(id, {
             attributes: {
-                exclude: ['createdAt', 'updatedAt', 'publisher_id'] // Bỏ rác
+                exclude: ['createdAt', 'updatedAt', 'publisher_id']
             },
             include: [
-                {
-                    model: Author,
-                    attributes: ['name'],
-                    through: { attributes: [] }
-                },
-                {
-                    model: Genre,
-                    attributes: ['genre_id', 'name'],
-                    through: { attributes: [] }
-                },
-                {
-                    model: Publisher,
-                    attributes: ['name']
-                },
+                { model: Author, attributes: ['name'], through: { attributes: [] } },
+                { model: Genre, attributes: ['genre_id', 'name'], through: { attributes: [] } },
+                { model: Publisher, attributes: ['name'] },
                 {
                     model: Review,
-                    attributes: ['review_id', 'rating', 'comment', 'review_date'], // Giữ updatedAt
+                    attributes: ['review_id', 'rating', 'comment', 'review_date'],
                     include: [
-                        {
-                            model: User,
-                            attributes: ['user_id', 'name'] // Chỉ lấy id + name
-                        }
+                        { model: User, attributes: ['user_id', 'name', 'avatar'] }
                     ]
                 }
             ]
@@ -170,7 +157,13 @@ const getBookById = async (req, res) => {
 
         if (!book) return res.status(404).json({ msg: 'Book not found' });
 
-        // Định dạng lại JSON siêu đẹp
+        // BƯỚC 2: Tính avg_rating riêng (an toàn)
+        const avgResult = await Review.findOne({
+            where: { book_id: id },
+            attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'avg_rating']],
+            raw: true
+        });
+
         const result = {
             id: book.book_id,
             title: book.title,
@@ -183,15 +176,16 @@ const getBookById = async (req, res) => {
             publisher: book.Publisher?.name,
             authors: book.Authors?.map(a => a.name).join(', '),
             genres: book.Genres,
+            avg_rating: Number(avgResult?.avg_rating || 0).toFixed(1), // ← THÊM: trung bình rating
             reviews: book.Reviews?.map(r => ({
                 id: r.review_id,
                 rating: r.rating,
                 comment: r.comment,
                 date: r.review_date,
-
                 user: {
                     id: r.User?.user_id,
-                    name: r.User?.name
+                    name: r.User?.name,
+                    avatar: r.User?.avatar
                 }
             })) || []
         };
@@ -202,7 +196,6 @@ const getBookById = async (req, res) => {
         res.status(500).json({ msg: 'Lỗi server' });
     }
 };
-
 // Update, delete tương tự...
 // Ví dụ: exports.updateBook = ... ; exports.deleteBook = ...
 

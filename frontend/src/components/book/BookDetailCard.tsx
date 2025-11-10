@@ -1,26 +1,14 @@
 // src/components/book/BookDetailCard.tsx
 import { Button } from '@/components/ui/button';
-import { Star, Plus, Minus, ArrowRight, BookOpen } from 'lucide-react';
+import { Star, Plus, Minus } from 'lucide-react';
 import { useCartStore } from '@/features/cart/useCartStore';
 import type { Book } from '@/types/book';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
-interface BookDetailCardProps {
-    book: Book & {
-        description: string;
-        publisher: string;
-        publishDate: string;
-        language: string;
-        readingAge: string;
-        pages: number;
-        dimensions: string;
-        rating: number;
-        bestseller?: boolean;
-    };
-}
 
-export function BookDetailCard({ book }: BookDetailCardProps) {
+
+export function BookDetailCard({ book }: { book: Book }) {
     const [quantity, setQuantity] = useState(1);
     const addToCart = useCartStore((state) => state.addToCart);
 
@@ -43,30 +31,10 @@ export function BookDetailCard({ book }: BookDetailCardProps) {
                                 alt={book.title}
                                 className="w-full rounded-lg shadow-2xl object-cover border border-gray-200"
                             />
-                            {/* Badges */}
-                            <div className="absolute top-4 left-4 flex flex-col gap-2">
-                                <span className="bg-white text-purple-700 text-xs font-medium px-3 py-1.5 rounded-full shadow-md flex items-center gap-1">
-                                    <BookOpen className="w-3 h-3" />
-                                    flips a few pages
-                                </span>
-                                {book.bestseller && (
-                                    <span className="bg-purple-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
-                                        York Times Bestseller
-                                    </span>
-                                )}
-                            </div>
+
                         </div>
 
-                        {/* Bottom tagline */}
-                        <div className="mt-6 bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
-                            <p className="text-sm italic text-purple-800 flex items-center gap-2">
-                                <span className="font-medium">A Brand-New Series in the</span>
-                                <span className="bg-purple-600 text-white px-2 py-1 rounded text-xs">
-                                    SHADOWHUNTER WORLD
-                                </span>
-                                <ArrowRight className="w-4 h-4 ml-1" />
-                            </p>
-                        </div>
+
                     </div>
                 </div>
 
@@ -90,16 +58,16 @@ export function BookDetailCard({ book }: BookDetailCardProps) {
                                     key={star}
                                     className={cn(
                                         "w-5 h-5",
-                                        star <= Math.floor(book.rating)
+                                        star <= Math.floor(book.avg_rating)
                                             ? "fill-yellow-400 text-yellow-400"
-                                            : star === Math.ceil(book.rating) && book.rating % 1 !== 0
+                                            : star === Math.ceil(book.avg_rating) && book.avg_rating % 1 !== 0
                                                 ? "fill-yellow-400/50 text-yellow-400"
                                                 : "text-gray-300"
                                     )}
                                 />
                             ))}
                         </div>
-                        <span className="text-lg font-medium">{book.rating.toFixed(1)}</span>
+                        <span className="text-lg font-medium">{book.avg_rating.toFixed(1)}</span>
                     </div>
 
                     {/* Price */}
@@ -150,25 +118,12 @@ export function BookDetailCard({ book }: BookDetailCardProps) {
                             <span className="ml-2 text-gray-700">{book.publisher}</span>
                         </div>
                         <div>
-                            <span className="text-purple-600 font-medium">Publication date:</span>
-                            <span className="ml-2 text-gray-700">{book.publishDate}</span>
+                            <span className="text-purple-600 font-medium">Release date:</span>
+                            <span className="ml-2 text-gray-700">{book.releaseDate}</span>
                         </div>
-                        <div>
-                            <span className="text-purple-600 font-medium">Language:</span>
-                            <span className="ml-2 text-gray-700">{book.language}</span>
-                        </div>
-                        <div>
-                            <span className="text-purple-600 font-medium">Reading age:</span>
-                            <span className="ml-2 text-gray-700">{book.readingAge}</span>
-                        </div>
-                        <div>
-                            <span className="text-purple-600 font-medium">Print length:</span>
-                            <span className="ml-2 text-gray-700">{book.pages} pages</span>
-                        </div>
-                        <div>
-                            <span className="text-purple-600 font-medium">Dimensions:</span>
-                            <span className="ml-2 text-gray-700">{book.dimensions}</span>
-                        </div>
+
+
+
                     </div>
                 </div>
             </div>

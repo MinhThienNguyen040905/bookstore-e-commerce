@@ -14,6 +14,7 @@ export interface Book {
     publisher: string;
     author: string;
     genres: Genre[];
+    avg_rating: number;
     reviews: Review[];
 }
 

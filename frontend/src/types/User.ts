@@ -1,4 +1,5 @@
 export interface CommentUser {
-    user_id: number;
-    username: string;
+    id: number;
+    name: string;
+    avatar: string;
 }

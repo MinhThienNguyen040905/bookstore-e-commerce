@@ -15,20 +15,6 @@ const featuredAuthor = {
     books: 30,
 };
 
-// const books = [
-//     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-//     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-//     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-//     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-//     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-//     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-//     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-//     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-//     { id: 1, title: "Financial Feminist", author: "Tori Dunlap", price: 20.46, cover: "/HowToWinFriends&InfluencePeople.jpg" },
-//     { id: 2, title: "No More Police", author: "Andrea Ritchie", price: 17.66, cover: "/HowToWinFriends&InfluencePeople.jpg" }
-//     // ... thêm 10+ sách
-// ];
-
 export default function Home() {
 
     const { data: newReleasesBooks, isLoading: loadingNewRelease, error: errorNewReleases } = useNewReleasesBooks();
