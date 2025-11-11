@@ -20,8 +20,12 @@ export function RegisterForm() {
     });
 
     const onSubmit = async (data: RegisterFormData) => {
-        await register(data.name, data.email, data.password);
-        navigate('/');
+        try {
+            await register(data.name, data.email, data.password);
+            navigate('/login');
+        } catch {
+            // Error đã toast
+        }
     };
 
     return (

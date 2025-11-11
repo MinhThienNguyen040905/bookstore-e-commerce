@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { loginSchema, type LoginFormData } from '@/schemas/auth.schema';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { showToast } from '@/lib/toast';
 
 export function LoginForm() {
     const login = useAuthStore((state) => state.login);
+    const navigate = useNavigate();
     const {
         register,
         handleSubmit,
@@ -19,7 +21,12 @@ export function LoginForm() {
     });
 
     const onSubmit = async (data: LoginFormData) => {
-        await login(data.email, data.password);
+        try {
+            await login(data.email, data.password);
+            navigate('/');
+        } catch {
+            // Error đã được toast trong store
+        }
     };
 
     return (
@@ -32,9 +39,7 @@ export function LoginForm() {
                     placeholder="you@example.com"
                     {...register('email')}
                 />
-                {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
+                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -45,9 +50,7 @@ export function LoginForm() {
                     placeholder="••••••••"
                     {...register('password')}
                 />
-                {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password.message}</p>
-                )}
+                {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
 
             <Button
