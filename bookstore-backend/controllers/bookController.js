@@ -136,11 +136,9 @@ const getTopRatedBooks = async (req, res) => {
 const getBookById = async (req, res) => {
     const { id } = req.params;
     try {
-        // BƯỚC 1: Lấy sách + thông tin (không tính AVG)
+        // BƯỚC 1: Lấy sách
         const book = await Book.findByPk(id, {
-            attributes: {
-                exclude: ['createdAt', 'updatedAt', 'publisher_id']
-            },
+            attributes: { exclude: ['createdAt', 'updatedAt', 'publisher_id'] },
             include: [
                 { model: Author, attributes: ['name'], through: { attributes: [] } },
                 { model: Genre, attributes: ['genre_id', 'name'], through: { attributes: [] } },
@@ -157,12 +155,16 @@ const getBookById = async (req, res) => {
 
         if (!book) return res.status(404).json({ msg: 'Book not found' });
 
-        // BƯỚC 2: Tính avg_rating riêng (an toàn)
+        // BƯỚC 2: Tính avg_rating
         const avgResult = await Review.findOne({
             where: { book_id: id },
             attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'avg_rating']],
             raw: true
         });
+
+        const avgRating = avgResult?.avg_rating
+            ? parseFloat(avgResult.avg_rating) // ← ÉP KIỂU CHÍNH XÁC
+            : 0;
 
         const result = {
             id: book.book_id,
@@ -176,7 +178,7 @@ const getBookById = async (req, res) => {
             publisher: book.Publisher?.name,
             authors: book.Authors?.map(a => a.name).join(', '),
             genres: book.Genres,
-            avg_rating: Number(avgResult?.avg_rating || 0).toFixed(1), // ← THÊM: trung bình rating
+            avg_rating: Number(avgRating.toFixed(1)), // ← ĐẢM BẢO LÀ NUMBER
             reviews: book.Reviews?.map(r => ({
                 id: r.review_id,
                 rating: r.rating,
