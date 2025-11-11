@@ -6,17 +6,21 @@ import type { Book } from '@/types/book';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
-
-
 export function BookDetailCard({ book }: { book: Book }) {
     const [quantity, setQuantity] = useState(1);
     const addToCart = useCartStore((state) => state.addToCart);
 
     const handleAddToCart = () => {
         for (let i = 0; i < quantity; i++) {
-            addToCart(book);
+            // Tạo object chỉ chứa các field cần cho cart
+            addToCart({
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                price: book.price,
+                cover: book.cover,
+            });
         }
-        // Optional: Show toast
     };
 
     return (
@@ -31,10 +35,7 @@ export function BookDetailCard({ book }: { book: Book }) {
                                 alt={book.title}
                                 className="w-full rounded-lg shadow-2xl object-cover border border-gray-200"
                             />
-
                         </div>
-
-
                     </div>
                 </div>
 
@@ -68,6 +69,9 @@ export function BookDetailCard({ book }: { book: Book }) {
                             ))}
                         </div>
                         <span className="text-lg font-medium">{book.avg_rating.toFixed(1)}</span>
+                        <span className="text-sm text-muted-foreground ml-2">
+                            ({book.reviews.length} đánh giá)
+                        </span>
                     </div>
 
                     {/* Price */}
@@ -77,9 +81,7 @@ export function BookDetailCard({ book }: { book: Book }) {
 
                     {/* Description */}
                     <div className="prose prose-purple max-w-none">
-                        <p className="text-gray-700 leading-relaxed">
-                            {book.description}
-                        </p>
+                        <p className="text-gray-700 leading-relaxed">{book.description}</p>
                     </div>
 
                     {/* Quantity & Add to Cart */}
@@ -119,11 +121,30 @@ export function BookDetailCard({ book }: { book: Book }) {
                         </div>
                         <div>
                             <span className="text-purple-600 font-medium">Release date:</span>
-                            <span className="ml-2 text-gray-700">{book.releaseDate}</span>
+                            <span className="ml-2 text-gray-700">
+                                {new Date(book.releaseDate).toLocaleDateString('vi-VN')}
+                            </span>
                         </div>
+                        <div>
+                            <span className="text-purple-600 font-medium">ISBN:</span>
+                            <span className="ml-2 text-gray-700">{book.isbn}</span>
+                        </div>
+                        <div>
+                            <span className="text-purple-600 font-medium">In stock:</span>
+                            <span className="ml-2 text-gray-700">{book.stock} cuốn</span>
+                        </div>
+                    </div>
 
-
-
+                    {/* Genres */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                        {book.genres.map((g) => (
+                            <span
+                                key={g.genre_id}
+                                className="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full"
+                            >
+                                {g.name}
+                            </span>
+                        ))}
                     </div>
                 </div>
             </div>

@@ -1,14 +1,14 @@
 // src/features/cart/useCartStore.ts
 import { create } from 'zustand';
-import type { Book } from '../../types/book';
+import type { CardBook } from '@/types/book';
 
-interface CartItem extends Book {
+interface CartItem extends CardBook {
     quantity: number;
 }
 
 interface CartStore {
     items: CartItem[];
-    addToCart: (book: Book) => void;
+    addToCart: (book: CardBook) => void;
     removeFromCart: (id: number) => void;
     clearCart: () => void;
     getTotalItems: () => number;
