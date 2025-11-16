@@ -22,7 +22,7 @@ type FormData = z.infer<typeof schema>;
 export function ResetPasswordCompleteForm() {
     const location = useLocation();
     const navigate = useNavigate();
-    const email = (location.state as { email: string })?.email || '';
+    const { email, otp } = (location.state as { email: string; otp: string })
 
     const {
         register,
@@ -35,7 +35,7 @@ export function ResetPasswordCompleteForm() {
     const onSubmit = async (data: FormData) => {
         const toastId = showToast.loading('Đang đổi mật khẩu...');
         try {
-            await resetPassword({ email, otp: '', newPassword: data.newPassword });
+            await resetPassword({ email, otp, newPassword: data.newPassword }); // GỬI OTP
             showToast.dismiss();
             showToast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập.');
             navigate('/login');
@@ -44,7 +44,6 @@ export function ResetPasswordCompleteForm() {
             showToast.error(err.response?.data?.message || 'Đổi mật khẩu thất bại');
         }
     };
-
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <p className="text-sm text-center text-muted-foreground">

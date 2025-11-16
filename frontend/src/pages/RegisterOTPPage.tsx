@@ -1,5 +1,4 @@
-// src/pages/RegisterOTPPage.tsx
-import { RequestOTPForm } from '@/components/auth/RequestOTPForm';
+import { RegisterRequestOTPForm } from '@/components/auth/register/RegisterRequestOTPForm';
 
 export default function RegisterOTPPage() {
     return (
@@ -10,7 +9,7 @@ export default function RegisterOTPPage() {
                     <p className="mt-2 text-sm text-muted-foreground">Nhập email để nhận mã OTP</p>
                 </div>
                 <div className="bg-white p-8 rounded-xl shadow-sm border">
-                    <RequestOTPForm />
+                    <RegisterRequestOTPForm />
                 </div>
             </div>
         </div>
