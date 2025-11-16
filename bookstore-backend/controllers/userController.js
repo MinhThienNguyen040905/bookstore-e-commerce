@@ -1,5 +1,7 @@
 // controllers/userController.js
 import User from '../models/User.js';
+import OtpTemp from '../models/OtpTemp.js';
+import { sendOTP, } from '../utils/email.js';
 import Session from '../models/Session.js';
 import jwt from 'jsonwebtoken';
 import Crypto from 'crypto';
@@ -107,7 +109,7 @@ const signOut = async (req, res) => {
                 sameSite: 'none'
             });
         }
-        res.success(null, 'Đăng xuất thành công', 204);
+        res.success(null, 'Đăng xuất thành công', 200);
     } catch (err) {
         res.error('Lỗi hệ thống', 500);
     }
@@ -143,4 +145,86 @@ const refreshToken = async (req, res) => {
     }
 };
 
-export default { register, login, getUsers, signOut, refreshToken };
+// === YÊU CẦU OTP (ĐĂNG KÝ & QUÊN MK) ===
+const requestOTP = async (req, res) => {
+    const { email } = req.body;
+    try {
+        const otp = Crypto.randomBytes(3).toString('hex').toUpperCase().slice(0, 6);
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 phút
+
+        await OtpTemp.upsert({
+            email,
+            otp,
+            expiresAt
+        });
+
+        await sendOTP(email, otp);
+
+        res.success(null, 'Đã gửi OTP đến email');
+    } catch (err) {
+        res.error('Lỗi gửi OTP', 500);
+    }
+};
+
+// === XÁC THỰC OTP ===
+const verifyOTP = async (req, res) => {
+    const { email, otp } = req.body;
+    try {
+        const record = await OtpTemp.findOne({ where: { email, otp } });
+        if (!record || record.expiresAt < new Date()) {
+            return res.error('OTP không hợp lệ hoặc đã hết hạn', 400);
+        }
+
+        res.success({ verified: true }, 'Xác thực OTP thành công');
+    } catch (err) {
+        res.error('Lỗi server', 500);
+    }
+};
+
+// === HOÀN TẤT ĐĂNG KÝ ===
+const completeRegister = async (req, res) => {
+    const { email, password, name, phone, address } = req.body;
+    try {
+        const otpRecord = await OtpTemp.findOne({ where: { email } });
+        if (!otpRecord || otpRecord.expiresAt < new Date()) {
+            return res.error('OTP hết hạn, vui lòng yêu cầu lại', 400);
+        }
+
+        const user = await User.create({ email, password, name, phone, address, role: 'customer' });
+        await otpRecord.destroy(); // Xóa OTP
+
+        const accessToken = jwt.sign(
+            { user_id: user.user_id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.success({ accessToken, user }, 'Đăng ký thành công');
+    } catch (err) {
+        res.error(err.message || 'Email đã tồn tại', 400);
+    }
+};
+
+// === QUÊN MẬT KHẨU → ĐỔI MK ===
+const resetPassword = async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+    try {
+        const otpRecord = await OtpTemp.findOne({ where: { email, otp } });
+        if (!otpRecord || otpRecord.expiresAt < new Date()) {
+            return res.error('OTP không hợp lệ hoặc đã hết hạn', 400);
+        }
+
+        const user = await User.findOne({ where: { email } });
+        if (!user) return res.error('Email không tồn tại', 404);
+
+        user.password = newPassword;
+        await user.save();
+        await otpRecord.destroy();
+
+        res.success(null, 'Đổi mật khẩu thành công');
+    } catch (err) {
+        res.error('Lỗi server', 500);
+    }
+};
+
+export default { register, login, getUsers, signOut, refreshToken, requestOTP, verifyOTP, completeRegister, resetPassword };

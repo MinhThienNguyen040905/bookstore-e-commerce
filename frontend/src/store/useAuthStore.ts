@@ -64,16 +64,20 @@ export const useAuthStore = create<AuthStore>()(
             },
 
             // src/store/useAuthStore.ts
+            // src/store/useAuthStore.ts
             logout: async () => {
                 try {
-                    await api.post('/users/logout'); // GỌI API
-                } catch (err) {
+                    const { data } = await api.post('/users/logout');
+                    showToast.success(data.message); // Dùng message từ backend
+                } catch (err: unknown) {
+                    // Nếu API lỗi (500), vẫn logout local
                     console.error('Logout API error:', err);
+                    showToast.error('Lỗi khi đăng xuất từ server');
                 } finally {
+                    // Luôn xóa local state + storage + header
                     delete api.defaults.headers.common['Authorization'];
                     set({ user: null, accessToken: null });
-                    localStorage.removeItem('auth-storage'); // Xóa persist
-                    showToast.success('Đã đăng xuất');
+                    localStorage.removeItem('auth-storage');
                 }
             },
         }),
