@@ -1,3 +1,4 @@
+// controllers/bookController.js
 import { Op } from 'sequelize';
 import sequelize from '../config/db.js';
 import Book from '../models/Book.js';
@@ -8,11 +9,12 @@ import Review from '../models/Review.js';
 import User from '../models/User.js';
 import cloudinary from '../cloudinary.js';
 import multer from 'multer';
+import fs from 'fs';
 
-const upload = multer({ dest: 'uploads/' }); // Tạm lưu local trước khi upload Cloudinary
+const upload = multer({ dest: 'uploads/' });
 const uploadCover = upload.single('cover_image');
 
-// Add book (with authors, genres)
+// === ADD BOOK ===
 const addBook = async (req, res) => {
     const { title, description, publisher_id, stock, price, release_date, isbn, authors, genres } = req.body;
     try {
@@ -20,8 +22,13 @@ const addBook = async (req, res) => {
         if (req.file) {
             const result = await cloudinary.uploader.upload(req.file.path);
             cover_image = result.secure_url;
+            fs.unlinkSync(req.file.path); // Xóa file tạm
         }
-        const book = await Book.create({ title, description, publisher_id, stock, price, cover_image, release_date, isbn });
+
+        const book = await Book.create({
+            title, description, publisher_id, stock, price,
+            cover_image, release_date, isbn
+        });
 
         if (authors) {
             const authorInstances = await Author.findAll({ where: { author_id: authors.split(',') } });
@@ -32,26 +39,51 @@ const addBook = async (req, res) => {
             await book.addGenres(genreInstances);
         }
 
-        res.status(201).json(book);
+        res.success({ book_id: book.book_id }, 'Thêm sách thành công', 201);
     } catch (err) {
-        res.status(400).json({ err: err.message });
+        res.error(err.message || 'Lỗi thêm sách', 400);
     }
 };
 
-// Get all books (with search/filter)
+// === GET ALL BOOKS ===
 const getBooks = async (req, res) => {
     const { title, author, genre, min_price, max_price, sort } = req.query;
     let where = {};
+
     if (title) where.title = { [Op.like]: `%${title}%` };
-    // Thêm logic cho author, genre (JOIN), price, sort (release_date or avg rating from Review)
+    if (min_price) where.price = { ...where.price, [Op.gte]: min_price };
+    if (max_price) where.price = { ...where.price, [Op.lte]: max_price };
+
     try {
-        const books = await Book.findAll({ where, include: [Publisher, Author, Genre] });
-        res.json(books);
+        const books = await Book.findAll({
+            where,
+            attributes: ['book_id', 'title', 'cover_image', 'price', 'stock'],
+            include: [
+                { model: Publisher, attributes: ['name'] },
+                { model: Author, attributes: ['name'], through: { attributes: [] } },
+                { model: Genre, attributes: ['name'], through: { attributes: [] } }
+            ],
+            order: sort === 'price' ? [['price', 'ASC']] : [['book_id', 'DESC']]
+        });
+
+        const result = books.map(book => ({
+            id: book.book_id,
+            title: book.title,
+            cover: book.cover_image,
+            price: Number(book.price),
+            stock: book.stock,
+            publisher: book.Publisher?.name,
+            authors: book.Authors?.map(a => a.name).join(', '),
+            genres: book.Genres?.map(g => g.name).join(', ')
+        }));
+
+        res.success(result, 'Lấy danh sách sách thành công');
     } catch (err) {
-        res.status(500).json({ err: err.message });
+        res.error('Lỗi server', 500);
     }
 };
 
+// === GET NEW RELEASES ===
 const getNewReleases = async (req, res) => {
     try {
         const books = await Book.findAll({
@@ -59,27 +91,26 @@ const getNewReleases = async (req, res) => {
             limit: 10,
             attributes: ['book_id', 'title', 'cover_image', 'release_date', 'price'],
             include: [
-                {
-                    model: Author,
-                    attributes: ['author_id', 'name'],
-                    through: { attributes: [] }
-                }
+                { model: Author, attributes: ['name'], through: { attributes: [] } }
             ]
         });
 
-        const results = books.map(book => ({
+        const result = books.map(book => ({
             id: book.book_id,
             title: book.title,
             cover: book.cover_image,
             price: Number(book.price),
+            releaseDate: book.release_date,
             authors: book.Authors.map(a => a.name).join(', ')
-        }))
-        res.json(results);
-    } catch (err) {
-        res.status(500).json({ err: err.message });
-    }
-}
+        }));
 
+        res.success(result, 'Lấy sách mới nhất thành công');
+    } catch (err) {
+        res.error('Lỗi server', 500);
+    }
+};
+
+// === GET TOP RATED BOOKS ===
 const getTopRatedBooks = async (req, res) => {
     try {
         const books = await Book.findAll({
@@ -91,19 +122,11 @@ const getTopRatedBooks = async (req, res) => {
                 'price',
                 [sequelize.fn('AVG', sequelize.col('Reviews.rating')), 'avgRating'],
                 [sequelize.fn('COUNT', sequelize.col('Reviews.review_id')), 'totalReviews'],
-                [sequelize.fn('GROUP_CONCAT', sequelize.literal('DISTINCT `Authors`.`name`')), 'authorsNames'] // THÊM DISTINCT
+                [sequelize.fn('GROUP_CONCAT', sequelize.literal('DISTINCT `Authors`.`name`')), 'authorsNames']
             ],
             include: [
-                {
-                    model: Author,
-                    attributes: [],
-                    through: { attributes: [] }
-                },
-                {
-                    model: Review,
-                    attributes: [],
-                    required: false
-                }
+                { model: Author, attributes: [], through: { attributes: [] } },
+                { model: Review, attributes: [], required: false }
             ],
             group: ['Book.book_id'],
             having: sequelize.where(
@@ -123,20 +146,19 @@ const getTopRatedBooks = async (req, res) => {
             price: Number(book.price),
             avgRating: Number(book.avgRating || 0).toFixed(1),
             totalReviews: Number(book.totalReviews || 0),
-            authors: book.authorsNames ? book.authorsNames.split(',').map(name => name.trim()).join(', ') : '' // Chuỗi, không mản
+            authors: book.authorsNames ? book.authorsNames.split(',').map(n => n.trim()).join(', ') : ''
         }));
 
-        res.json(result);
+        res.success(result, 'Lấy top sách thành công');
     } catch (err) {
-        console.error('Lỗi lấy top sách:', err);
-        res.status(500).json({ msg: 'Lỗi server' });
+        res.error('Lỗi server', 500);
     }
 };
 
+// === GET BOOK BY ID ===
 const getBookById = async (req, res) => {
     const { id } = req.params;
     try {
-        // BƯỚC 1: Lấy sách
         const book = await Book.findByPk(id, {
             attributes: { exclude: ['createdAt', 'updatedAt', 'publisher_id'] },
             include: [
@@ -153,9 +175,8 @@ const getBookById = async (req, res) => {
             ]
         });
 
-        if (!book) return res.status(404).json({ msg: 'Book not found' });
+        if (!book) return res.error('Sách không tồn tại', 404);
 
-        // BƯỚC 2: Tính avg_rating
         const avgResult = await Review.findOne({
             where: { book_id: id },
             attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'avg_rating']],
@@ -178,7 +199,7 @@ const getBookById = async (req, res) => {
             publisher: book.Publisher?.name,
             authors: book.Authors?.map(a => a.name).join(', '),
             genres: book.Genres,
-            avg_rating: Number(avgRating.toFixed(1)), // ← ĐẢM BẢO LÀ NUMBER
+            avg_rating: Number(avgRating.toFixed(1)),
             reviews: book.Reviews?.map(r => ({
                 id: r.review_id,
                 rating: r.rating,
@@ -192,15 +213,10 @@ const getBookById = async (req, res) => {
             })) || []
         };
 
-        res.json(result);
+        res.success(result, 'Lấy thông tin sách thành công');
     } catch (err) {
-        console.error('Lỗi lấy sách:', err);
-        res.status(500).json({ msg: 'Lỗi server' });
+        res.error('Lỗi server', 500);
     }
 };
-
-
-// Update, delete tương tự...
-// Ví dụ: exports.updateBook = ... ; exports.deleteBook = ...
 
 export default { uploadCover, addBook, getBooks, getNewReleases, getTopRatedBooks, getBookById };

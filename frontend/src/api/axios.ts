@@ -1,15 +1,16 @@
-import { useAuthStore } from '@/store/useAuthStore';
+// src/api/axios.ts
 import axios from 'axios';
-// Axios instance (baseURL, headers)
+import { useAuthStore } from '@/store/useAuthStore';
+
 const api = axios.create({
-    baseURL: 'http://localhost:3000/api',  // Thay bằng backend URL (e.g., /api/books)
-    headers: { 'Content-Type': 'application/json' },
-    withCredentials: true,
-    // Optional: Add auth token: headers: { Authorization: `Bearer ${token}` }
+    baseURL: 'http://localhost:3000/api',
+    withCredentials: true, // Gửi cookie refreshToken
+    headers: {
+        'Content-Type': 'application/json',
+    },
 });
 
-
-
+// Interceptor: Tự động refresh token
 api.interceptors.response.use(
     (res) => res,
     async (error) => {
@@ -19,8 +20,8 @@ api.interceptors.response.use(
             originalRequest._retry = true;
 
             try {
-                const { data } = await api.post('/refresh-token');
-                const newAccessToken = data.accessToken;
+                const { data } = await api.post('/users/refresh-token');
+                const newAccessToken = data.data.accessToken; // data.data!
 
                 useAuthStore.getState().setAccessToken(newAccessToken);
                 originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;

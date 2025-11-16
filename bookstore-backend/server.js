@@ -4,6 +4,7 @@ import sequelize from './config/db.js';
 import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import response from './middleware/response.js';
 
 
 // Routes
@@ -14,11 +15,13 @@ import orderRoutes from './routes/orders.js';
 import reviewRoutes from './routes/reviews.js';
 import promoRoutes from './routes/promos.js';
 
+
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(response);
 
 // Mount routes
 app.use('/api/users', userRoutes);

@@ -34,47 +34,47 @@ export const useAuthStore = create<AuthStore>()(
                 api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
             },
 
+            // src/store/useAuthStore.ts
             login: async (email, password) => {
-                const toastId = showToast.loading('Đang đăng nhập...');
                 try {
                     const { data } = await api.post('/users/login', { email, password });
-                    const { accessToken, user } = data;
+                    const { accessToken, user } = data.data;
 
                     set({ user, accessToken });
                     api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-
-                    showToast.dismiss(toastId);
-                    showToast.success('Đăng nhập thành công!');
-                } catch (err: unknown) {
-                    showToast.dismiss(toastId);
-                    const msg = err && typeof err === 'object' && 'response' in err
-                        ? (err as any).response?.data?.msg
-                        : 'Đăng nhập thất bại';
-                    showToast.error(msg);
-                    throw err;
+                } catch (err) {
+                    console.error('Login failed:', err); // Log để debug
+                    throw err; // Không toast ở đây
                 }
             },
-
             register: async (name, email, password) => {
                 const toastId = showToast.loading('Đang đăng ký...');
                 try {
-                    await api.post('/users/register', { name, email, password });
+                    const { data } = await api.post(`/users/register`, { name, email, password });
                     showToast.dismiss(toastId);
-                    showToast.success('Đăng ký thành công! Vui lòng đăng nhập.');
+                    showToast.success(data.message);
                 } catch (err: unknown) {
                     showToast.dismiss(toastId);
                     const msg = err && typeof err === 'object' && 'response' in err
-                        ? (err as any).response?.data?.msg
-                        : 'Đăng ký thất bại';
+                        ? (err as any).response?.data?.message || 'Đăng ký thất bại'
+                        : 'Lỗi mạng';
                     showToast.error(msg);
                     throw err;
                 }
             },
 
-            logout: () => {
-                delete api.defaults.headers.common['Authorization'];
-                set({ user: null, accessToken: null });
-                showToast.success('Đã đăng xuất');
+            // src/store/useAuthStore.ts
+            logout: async () => {
+                try {
+                    await api.post('/users/logout'); // GỌI API
+                } catch (err) {
+                    console.error('Logout API error:', err);
+                } finally {
+                    delete api.defaults.headers.common['Authorization'];
+                    set({ user: null, accessToken: null });
+                    localStorage.removeItem('auth-storage'); // Xóa persist
+                    showToast.success('Đã đăng xuất');
+                }
             },
         }),
         {

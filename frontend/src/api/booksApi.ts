@@ -1,21 +1,18 @@
-import type { Book, CardBook } from '@/types/book';
+// src/api/booksApi.ts
 import api from './axios';
+import type { CardBook, Book } from '@/types/book';
 
-// Get selected books
 export const getNewReleases = async (): Promise<CardBook[]> => {
-    const response = await api.get('/books/new-releases');
-    return response.data;  // Giả sử data là Book[]
+    const { data } = await api.get('/books/new-releases');
+    return data.data; // ← data.data!
 };
 
-// Get must-buy books
 export const getTopRated = async (): Promise<CardBook[]> => {
-    const response = await api.get('/books/top-rated');
-    return response.data;
+    const { data } = await api.get('/books/top-rated');
+    return data.data;
 };
 
 export const getBookById = async (id: number): Promise<Book> => {
     const { data } = await api.get(`/books/${id}`);
-    return data;
+    return data.data;
 };
-
-// Mở rộng sau: getBookById, searchBooks, etc.

@@ -1,31 +1,47 @@
+// controllers/userController.js
 import User from '../models/User.js';
-import jwt from 'jsonwebtoken';
-import 'dotenv/config';
-import Crypto from 'crypto';
 import Session from '../models/Session.js';
+import jwt from 'jsonwebtoken';
+import Crypto from 'crypto';
+import 'dotenv/config';
 import { Op } from 'sequelize';
 import { ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL } from '../constants/auth.js';
 
-
+// === REGISTER ===
 const register = async (req, res) => {
     const { name, email, password, address, phone, role } = req.body;
     try {
         const user = await User.create({ name, email, password, address, phone, role });
-        const token = jwt.sign({ user_id: user.user_id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.status(201).json({ user, token });
+        const token = jwt.sign(
+            { user_id: user.user_id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.success({
+            user: {
+                user_id: user.user_id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                phone: user.phone,
+                address: user.address,
+                avatar: user.avatar
+            },
+            token
+        }, 'Đăng ký thành công');
     } catch (err) {
-        res.status(400).json({ err: err.message });
+        res.error(err.message || 'Email đã tồn tại', 400);
     }
 };
 
-// Login
+// === LOGIN ===
 const login = async (req, res) => {
     const { email, password } = req.body;
-
     try {
         const user = await User.findOne({ where: { email } });
         if (!user || !(await user.validPassword(password))) {
-            return res.status(401).json({ msg: 'Invalid credentials' });
+            return res.error('Email hoặc mật khẩu không đúng', 401);
         }
 
         const accessToken = jwt.sign(
@@ -34,119 +50,96 @@ const login = async (req, res) => {
             { expiresIn: Math.floor(ACCESS_TOKEN_TTL / 1000) }
         );
 
-        // ← DÒNG NÀY BÂY GIỜ HOẠT ĐỘNG
         const refreshToken = Crypto.randomBytes(64).toString('hex');
 
         await Session.create({
             user_id: user.user_id,
             refresh_token: refreshToken,
-            expires_at: new Date(Date.now() + REFRESH_TOKEN_TTL),
+            expires_at: new Date(Date.now() + REFRESH_TOKEN_TTL)
         });
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            maxAge: REFRESH_TOKEN_TTL,
+            maxAge: REFRESH_TOKEN_TTL
         });
 
-        res.json({
-            msg: 'Login successful',
+        res.success({
             accessToken,
             user: {
                 user_id: user.user_id,
-                email: user.email,
                 name: user.name,
+                email: user.email,
                 role: user.role,
                 phone: user.phone,
                 address: user.address,
-                avatar: user.avatar,
-            },
-        });
+                avatar: user.avatar
+            }
+        }, 'Đăng nhập thành công');
     } catch (err) {
         console.error('Login error:', err);
-        res.status(500).json({ msg: 'Server error' });
+        res.error('Lỗi server', 500);
     }
 };
-// Get all users (admin only)
+
+// === GET ALL USERS (ADMIN ONLY) ===
 const getUsers = async (req, res) => {
     try {
-        const users = await User.findAll();
-        res.json(users);
+        const users = await User.findAll({
+            attributes: ['user_id', 'name', 'email', 'role', 'phone', 'address', 'avatar']
+        });
+        res.success(users, 'Lấy danh sách người dùng thành công');
     } catch (err) {
-        res.status(500).json({ err: err.message });
+        res.error('Lỗi server', 500);
     }
 };
 
-// === LOGOUT: XÓA REFRESH TOKEN ===
-export const signOut = async (req, res) => {
+// === LOGOUT ===
+const signOut = async (req, res) => {
     try {
         const refreshToken = req.cookies?.refreshToken;
-
         if (refreshToken) {
-            // Xóa session trong DB (dùng Sequelize)
-            await Session.destroy({
-                where: { refresh_token: refreshToken }
-            });
-
-            // Xóa cookie
+            await Session.destroy({ where: { refresh_token: refreshToken } });
             res.clearCookie('refreshToken', {
                 httpOnly: true,
                 secure: true,
-                sameSite: 'none',
+                sameSite: 'none'
             });
         }
-
-        return res.status(204).send(); // No Content
-    } catch (error) {
-        console.error('Lỗi khi đăng xuất:', error);
-        return res.status(500).json({ msg: 'Lỗi hệ thống' });
+        res.success(null, 'Đăng xuất thành công', 204);
+    } catch (err) {
+        res.error('Lỗi hệ thống', 500);
     }
 };
 
-// === REFRESH TOKEN: CẤP LẠI ACCESS TOKEN ===
-export const refreshToken = async (req, res) => {
+// === REFRESH TOKEN ===
+const refreshToken = async (req, res) => {
     try {
         const refreshToken = req.cookies?.refreshToken;
-        if (!refreshToken) {
-            return res.status(401).json({ msg: 'Không tìm thấy refresh token' });
-        }
+        if (!refreshToken) return res.error('Không tìm thấy refresh token', 401);
 
-        // Tìm session còn hiệu lực
         const session = await Session.findOne({
             where: {
                 refresh_token: refreshToken,
-                expires_at: { [Op.gt]: new Date() } // Chưa hết hạn
+                expires_at: { [Op.gt]: new Date() }
             }
         });
 
-        if (!session) {
-            return res.status(403).json({ msg: 'Refresh token không hợp lệ hoặc đã hết hạn' });
-        }
+        if (!session) return res.error('Refresh token không hợp lệ hoặc đã hết hạn', 403);
 
-        // Lấy user từ session
         const user = await User.findByPk(session.user_id);
-        if (!user) {
-            return res.status(404).json({ msg: 'Người dùng không tồn tại' });
-        }
+        if (!user) return res.error('Người dùng không tồn tại', 404);
 
-        // Tạo access token mới
         const accessToken = jwt.sign(
-            {
-                user_id: user.user_id,
-                role: user.role
-            },
+            { user_id: user.user_id, role: user.role },
             process.env.JWT_SECRET,
-            { expiresIn: Math.floor(ACCESS_TOKEN_TTL / 1000) } // giây
+            { expiresIn: Math.floor(ACCESS_TOKEN_TTL / 1000) }
         );
 
-        return res.status(200).json({
-            accessToken,
-            expiresIn: ACCESS_TOKEN_TTL / 1000 // giây
-        });
-    } catch (error) {
-        console.error('Lỗi khi refresh token:', error);
-        return res.status(500).json({ msg: 'Lỗi hệ thống' });
+        res.success({ accessToken, expiresIn: ACCESS_TOKEN_TTL / 1000 });
+    } catch (err) {
+        res.error('Lỗi hệ thống', 500);
     }
 };
 

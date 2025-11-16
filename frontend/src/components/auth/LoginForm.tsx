@@ -20,12 +20,23 @@ export function LoginForm() {
         resolver: zodResolver(loginSchema),
     });
 
+    // src/components/auth/LoginForm.tsx
     const onSubmit = async (data: LoginFormData) => {
+        const toastId = showToast.loading('Đang đăng nhập...');
         try {
             await login(data.email, data.password);
+            showToast.dismiss(toastId);
+            showToast.success('Đăng nhập thành công!');
             navigate('/');
-        } catch {
-            // Error đã được toast trong store
+        } catch (err: unknown) {
+            showToast.dismiss(toastId);
+            if (err && typeof err === 'object' && 'response' in err) {
+                const axiosError = err as { response?: { data?: { message?: string } } };
+                const msg = axiosError.response?.data?.message || 'Đăng nhập thất bại';
+                showToast.error(msg);
+            } else {
+                showToast.error('Lỗi mạng hoặc server');
+            }
         }
     };
 
