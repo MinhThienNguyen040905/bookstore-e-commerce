@@ -63,7 +63,7 @@ export const useAuthStore = create<AuthStore>()(
                 }
             },
 
-            // src/store/useAuthStore.ts
+
             // src/store/useAuthStore.ts
             logout: async () => {
                 try {

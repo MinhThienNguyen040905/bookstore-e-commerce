@@ -4,38 +4,13 @@ import OtpTemp from '../models/OtpTemp.js';
 import { sendOTP, } from '../utils/email.js';
 import Session from '../models/Session.js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import Crypto from 'crypto';
 import 'dotenv/config';
 import { Op } from 'sequelize';
 import { ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL } from '../constants/auth.js';
+import { log } from 'console';
 
-// === REGISTER ===
-const register = async (req, res) => {
-    const { name, email, password, address, phone, role } = req.body;
-    try {
-        const user = await User.create({ name, email, password, address, phone, role });
-        const token = jwt.sign(
-            { user_id: user.user_id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-
-        res.success({
-            user: {
-                user_id: user.user_id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone,
-                address: user.address,
-                avatar: user.avatar
-            },
-            token
-        }, 'Đăng ký thành công');
-    } catch (err) {
-        res.error(err.message || 'Email đã tồn tại', 400);
-    }
-};
 
 // === LOGIN ===
 const login = async (req, res) => {
@@ -145,23 +120,27 @@ const refreshToken = async (req, res) => {
     }
 };
 
-// === YÊU CẦU OTP (ĐĂNG KÝ & QUÊN MK) ===
+// === YÊU CẦU OTP ===
 const requestOTP = async (req, res) => {
     const { email } = req.body;
+    console.log('Email nhận từ client:', email);
+
+    // REGEX CHUẨN EMAIL (cho phép _, -, ., chữ số)
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!email || !emailRegex.test(email)) {
+        return res.error('Email không hợp lệ', 400);
+    }
+
     try {
         const otp = Crypto.randomBytes(3).toString('hex').toUpperCase().slice(0, 6);
-        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 phút
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-        await OtpTemp.upsert({
-            email,
-            otp,
-            expiresAt
-        });
-
+        await OtpTemp.upsert({ email, otp, expiresAt });
         await sendOTP(email, otp);
 
         res.success(null, 'Đã gửi OTP đến email');
     } catch (err) {
+        console.error('Error sending OTP:', err);
         res.error('Lỗi gửi OTP', 500);
     }
 };
@@ -193,17 +172,13 @@ const completeRegister = async (req, res) => {
         const user = await User.create({ email, password, name, phone, address, role: 'customer' });
         await otpRecord.destroy(); // Xóa OTP
 
-        const accessToken = jwt.sign(
-            { user_id: user.user_id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
 
-        res.success({ accessToken, user }, 'Đăng ký thành công');
+        res.success({ user }, 'Đăng ký thành công');
     } catch (err) {
         res.error(err.message || 'Email đã tồn tại', 400);
     }
 };
+
 
 // === QUÊN MẬT KHẨU → ĐỔI MK ===
 const resetPassword = async (req, res) => {
@@ -217,14 +192,17 @@ const resetPassword = async (req, res) => {
         const user = await User.findOne({ where: { email } });
         if (!user) return res.error('Email không tồn tại', 404);
 
-        user.password = newPassword;
+        // TỰ HASH TRƯỚC KHI SAVE
+        user.password = await bcrypt.hash(newPassword, 10);
         await user.save();
+
         await otpRecord.destroy();
 
         res.success(null, 'Đổi mật khẩu thành công');
     } catch (err) {
+        console.error('Error resetting password:', err);
         res.error('Lỗi server', 500);
     }
 };
 
-export default { register, login, getUsers, signOut, refreshToken, requestOTP, verifyOTP, completeRegister, resetPassword };
+export default { login, getUsers, signOut, refreshToken, requestOTP, verifyOTP, completeRegister, resetPassword };
