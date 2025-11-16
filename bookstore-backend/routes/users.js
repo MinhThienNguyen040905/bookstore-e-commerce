@@ -11,7 +11,6 @@ router.get('/', auth, adminAuth, userController.getUsers);
 router.post('/request-otp', userController.requestOTP);
 router.post('/verify-otp', userController.verifyOTP);
 router.post('/register', userController.completeRegister);
-//router.post('/forgot-password', userController.requestOTP);
 router.post('/reset-password', userController.resetPassword);
 
 export default router;

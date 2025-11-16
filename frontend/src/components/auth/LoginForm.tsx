@@ -20,7 +20,6 @@ export function LoginForm() {
         resolver: zodResolver(loginSchema),
     });
 
-    // src/components/auth/LoginForm.tsx
     const onSubmit = async (data: LoginFormData) => {
         const toastId = showToast.loading('Đang đăng nhập...');
         try {
@@ -64,6 +63,16 @@ export function LoginForm() {
                 {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
 
+            {/* QUÊN MẬT KHẨU */}
+            <div className="text-right">
+                <Link
+                    to="/reset-password"
+                    className="text-sm text-purple-600 hover:underline font-medium"
+                >
+                    Quên mật khẩu?
+                </Link>
+            </div>
+
             <Button
                 type="submit"
                 className="w-full bg-purple-600 hover:bg-purple-700"
@@ -74,7 +83,7 @@ export function LoginForm() {
 
             <p className="text-center text-sm text-muted-foreground">
                 Chưa có tài khoản?{' '}
-                <Link to="/register" className="text-purple-600 hover:underline">
+                <Link to="/register-otp" className="text-purple-600 hover:underline">
                     Đăng ký ngay
                 </Link>
             </p>

@@ -1,9 +1,26 @@
 // src/lib/toast.ts
 import { toast } from 'sonner';
 
+let currentToastId: string | number | null = null;
+
 export const showToast = {
-    success: (message: string) => toast.success(message),
-    error: (message: string) => toast.error(message),
-    loading: (message: string) => toast.loading(message),
-    dismiss: (id: string | number) => toast.dismiss(id),
+    loading: (msg: string) => {
+        if (currentToastId) toast.dismiss(currentToastId);
+        currentToastId = toast.loading(msg);
+        return currentToastId;
+    },
+    success: (msg: string) => {
+        if (currentToastId) toast.dismiss(currentToastId);
+        currentToastId = toast.success(msg);
+    },
+    error: (msg: string) => {
+        if (currentToastId) toast.dismiss(currentToastId);
+        currentToastId = toast.error(msg);
+    },
+    dismiss: () => {
+        if (currentToastId) {
+            toast.dismiss(currentToastId);
+            currentToastId = null;
+        }
+    },
 };
