@@ -1,4 +1,3 @@
-// src/api/booksApi.ts
 import api from './axios';
 import type { CardBook, Book } from '@/types/book';
 

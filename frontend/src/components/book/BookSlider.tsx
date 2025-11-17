@@ -1,4 +1,4 @@
-// src/components/book/BookSlider.tsx
+
 import { BookCard } from './BookCard';
 import type { CardBook } from '@/types/book';
 import { ChevronLeft, ChevronRight } from 'lucide-react';

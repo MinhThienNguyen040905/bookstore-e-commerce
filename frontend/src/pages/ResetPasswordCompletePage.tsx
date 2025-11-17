@@ -1,5 +1,5 @@
 // src/pages/ResetPasswordCompletePage.tsx
-import { ResetPasswordCompleteForm } from '@/components/auth/ResetPasswordCompleteForm';
+import { ResetPasswordCompleteForm } from '@/components/auth/reset/ResetPasswordCompleteForm';
 
 export default function ResetPasswordCompletePage() {
     return (

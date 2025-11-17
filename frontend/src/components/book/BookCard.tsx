@@ -1,4 +1,4 @@
-// src/components/book/BookCard.tsx
+
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart } from 'lucide-react';

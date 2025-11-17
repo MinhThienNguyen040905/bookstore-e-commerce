@@ -1,4 +1,4 @@
-// src/components/common/LoadingSpinner.tsx
+
 export function LoadingSpinner() {
     return (
         <div className="flex justify-center items-center h-screen">

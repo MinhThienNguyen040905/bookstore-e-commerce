@@ -1,11 +1,11 @@
-// src/components/auth/LoginForm.tsx
+
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { loginSchema, type LoginFormData } from '@/schemas/auth.schema';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '@/features/auth/useAuthStore';
 import { Link, useNavigate } from 'react-router-dom';
 import { showToast } from '@/lib/toast';
 

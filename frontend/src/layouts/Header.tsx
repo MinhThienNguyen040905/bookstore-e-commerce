@@ -3,7 +3,7 @@ import { Search, ShoppingCart, Menu, Phone, LogOut, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/features/cart/useCartStore';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '@/features/auth/useAuthStore';
 import { Link } from 'react-router-dom';
 import {
     DropdownMenu,

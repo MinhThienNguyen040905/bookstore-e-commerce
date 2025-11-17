@@ -1,4 +1,4 @@
-// src/components/book/BookReviews.tsx
+
 import { Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';

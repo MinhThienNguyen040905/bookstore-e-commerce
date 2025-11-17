@@ -1,4 +1,4 @@
-// src/components/book/BookDetailCard.tsx
+
 import { Button } from '@/components/ui/button';
 import { Star, Plus, Minus } from 'lucide-react';
 import { useCartStore } from '@/features/cart/useCartStore';

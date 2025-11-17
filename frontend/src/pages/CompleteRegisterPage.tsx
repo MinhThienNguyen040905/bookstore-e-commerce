@@ -1,5 +1,5 @@
 // src/pages/CompleteRegisterPage.tsx
-import { CompleteRegisterForm } from '@/components/auth/CompleteRegisterForm';
+import { CompleteRegisterForm } from '@/components/auth/register/CompleteRegisterForm';
 
 export default function CompleteRegisterPage() {
     return (
