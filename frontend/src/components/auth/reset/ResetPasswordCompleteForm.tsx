@@ -3,20 +3,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { z } from 'zod';
+import { resetPasswordSchema, type ResetPasswordData } from '@/schemas/otp.schema'; // Import schema từ file chung
 import { resetPassword } from '@/api/authApi';
 import { showToast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
-
-const schema = z.object({
-    newPassword: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự'),
-    confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Mật khẩu không khớp',
-    path: ['confirmPassword'],
-});
-
-type FormData = z.infer<typeof schema>;
 
 export default function ResetPasswordCompleteForm({ email, otp }: { email: string; otp: string }) {
     const navigate = useNavigate();
@@ -28,20 +18,27 @@ export default function ResetPasswordCompleteForm({ email, otp }: { email: strin
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
-    } = useForm<FormData>({
-        resolver: zodResolver(schema),
+    } = useForm<ResetPasswordData>({
+        resolver: zodResolver(resetPasswordSchema), // Sử dụng schema import từ otp.schema.ts
     });
 
-    const onSubmit = async (data: FormData) => {
+    const onSubmit = async (data: ResetPasswordData) => {
         const toastId = showToast.loading('Đang đổi mật khẩu...');
         try {
-            await resetPassword({ email, otp, newPassword: data.newPassword });
-            showToast.dismiss();
+            await resetPassword({
+                email,
+                otp,
+                newPassword: data.newPassword, // Chỉ gửi cần thiết, bỏ confirmPassword
+            });
+            showToast.dismiss(toastId);
             showToast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập.');
             navigate('/login');
         } catch (err: any) {
-            showToast.dismiss();
-            showToast.error(err.response?.data?.message || 'Đổi mật khẩu thất bại');
+            showToast.dismiss(toastId);
+            const errorMessage = err.response?.data?.message || 'Đổi mật khẩu thất bại';
+            showToast.error(errorMessage);
+            // Nếu cần: Handle "OTP hết hạn" để reset step (pass prop từ parent như trước)
+            // if (errorMessage.includes('OTP hết hạn')) { onOtpExpired?.(); }
         }
     };
 
