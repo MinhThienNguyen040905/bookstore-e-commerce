@@ -1,41 +1,29 @@
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { loginSchema, type LoginFormData } from '@/schemas/auth.schema';
-import { useAuthStore } from '@/features/auth/useAuthStore';
+import { useAuth } from '@/hooks/useAuth';
 import { Link, useNavigate } from 'react-router-dom';
-import { showToast } from '@/lib/toast';
 
 export function LoginForm() {
-    const login = useAuthStore((state) => state.login);
+    const { login, isLoggingIn } = useAuth();
     const navigate = useNavigate();
     const {
         register,
         handleSubmit,
-        formState: { errors, isSubmitting },
+        formState: { errors },
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
     });
 
     const onSubmit = async (data: LoginFormData) => {
-        const toastId = showToast.loading('Đang đăng nhập...');
         try {
-            await login(data.email, data.password);
-            showToast.dismiss(toastId);
-            showToast.success('Đăng nhập thành công!');
+            await login({ email: data.email, password: data.password }); // Dùng mutateAsync
             navigate('/');
-        } catch (err: unknown) {
-            showToast.dismiss(toastId);
-            if (err && typeof err === 'object' && 'response' in err) {
-                const axiosError = err as { response?: { data?: { message?: string } } };
-                const msg = axiosError.response?.data?.message || 'Đăng nhập thất bại';
-                showToast.error(msg);
-            } else {
-                showToast.error('Lỗi mạng hoặc server');
-            }
+        } catch (error) {
+            console.error('Login error:', error);
         }
     };
 
@@ -51,7 +39,6 @@ export function LoginForm() {
                 />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
-
             <div className="space-y-2">
                 <Label htmlFor="password">Mật khẩu</Label>
                 <Input
@@ -62,8 +49,6 @@ export function LoginForm() {
                 />
                 {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
-
-            {/* QUÊN MẬT KHẨU */}
             <div className="text-right">
                 <Link
                     to="/reset-password"
@@ -72,18 +57,16 @@ export function LoginForm() {
                     Quên mật khẩu?
                 </Link>
             </div>
-
             <Button
                 type="submit"
                 className="w-full bg-purple-600 hover:bg-purple-700"
-                disabled={isSubmitting}
+                disabled={isLoggingIn}
             >
-                {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                {isLoggingIn ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </Button>
-
             <p className="text-center text-sm text-muted-foreground">
                 Chưa có tài khoản?{' '}
-                <Link to="/register-otp" className="text-purple-600 hover:underline">
+                <Link to="/register" className="text-purple-600 hover:underline">
                     Đăng ký ngay
                 </Link>
             </p>

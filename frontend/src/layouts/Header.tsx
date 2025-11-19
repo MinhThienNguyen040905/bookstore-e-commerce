@@ -1,9 +1,8 @@
-// src/components/layout/Header.tsx
 import { Search, ShoppingCart, Menu, Phone, LogOut, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/features/cart/useCartStore';
-import { useAuthStore } from '@/features/auth/useAuthStore';
+import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import {
     DropdownMenu,
@@ -17,12 +16,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export function Header() {
     const itemCount = useCartStore((state) => state.getTotalItems());
-    const { user, logout } = useAuthStore();
+    const { user, logout } = useAuth();
+
+    console.log('Header user:', user); // Debug
 
     return (
         <header className="border-b bg-white">
             <div className="container mx-auto px-4">
-                {/* Top bar */}
                 <div className="flex items-center justify-between py-2 text-sm">
                     <div className="flex items-center gap-4">
                         <span className="font-semibold">B-World</span>
@@ -39,21 +39,16 @@ export function Header() {
                         </div>
                     </div>
                 </div>
-
-                {/* Main nav */}
                 <div className="flex items-center justify-between py-4">
                     <div className="flex items-center gap-8 flex-1">
                         <Link to="/" className="text-2xl font-bold text-purple-600">B-World</Link>
-
                         <nav className="hidden md:flex items-center gap-6">
                             <Link to="/must-read" className="hover:text-purple-600 transition">Must Read</Link>
                             <Link to="/promotion" className="hover:text-purple-600 transition">Promotion</Link>
                             <Link to="/newsletter" className="hover:text-purple-600 transition">Newsletter</Link>
                         </nav>
                     </div>
-
                     <div className="flex items-center gap-4">
-                        {/* Search */}
                         <div className="relative hidden md:block">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <Input
@@ -61,14 +56,12 @@ export function Header() {
                                 className="pl-10 w-64"
                             />
                         </div>
-
-                        {/* Auth */}
                         {user ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                                         <Avatar className="h-10 w-10">
-                                            <AvatarImage src={user.avatar} alt={user.name} />
+                                            <AvatarImage src={user.avatar || 'https://via.placeholder.com/40'} alt={user.name} />
                                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                     </Button>

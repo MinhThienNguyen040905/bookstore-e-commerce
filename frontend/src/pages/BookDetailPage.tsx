@@ -1,4 +1,4 @@
-// src/pages/BookDetailPage.tsx
+import { Suspense } from 'react';
 import { Header } from '@/layouts/Header';
 import { Footer } from '@/layouts/Footer';
 import { BookDetailCard } from '@/components/book/BookDetailCard';
@@ -6,15 +6,25 @@ import { BookReviews } from '@/components/book/BookReviews';
 import { useParams, Link } from 'react-router-dom';
 import { useBookDetail } from '@/hooks/useBooks';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 export default function BookDetailPage() {
+    return (
+        <ErrorBoundary fallback={<p className="text-center py-10">Đã xảy ra lỗi. Vui lòng thử lại!</p>}>
+            <Suspense fallback={<LoadingSpinner />}>
+                <BookDetailPageContent />
+            </Suspense>
+        </ErrorBoundary>
+    );
+}
+
+function BookDetailPageContent() {
     const { id } = useParams<{ id: string }>();
     const bookId = Number(id);
-    const { data: book, isLoading, error } = useBookDetail(bookId);
+    const { data: book, error } = useBookDetail(bookId);
 
-    if (isLoading) return <LoadingSpinner />;
     if (error || !book) return <p className="text-center py-10">Không tìm thấy sách!</p>;
 
     return (
@@ -28,11 +38,9 @@ export default function BookDetailPage() {
                             Quay lại
                         </Button>
                     </Link>
-
                     <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
                         <BookDetailCard book={book} />
                     </div>
-
                     <div className="bg-white rounded-xl shadow-sm p-6">
                         <BookReviews reviews={book.reviews} />
                     </div>

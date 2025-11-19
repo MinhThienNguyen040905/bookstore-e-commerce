@@ -1,4 +1,3 @@
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { z } from 'zod';
 import { resetPassword } from '@/api/authApi';
 import { showToast } from '@/lib/toast';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const schema = z.object({
     newPassword: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự'),
@@ -19,10 +18,11 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export function ResetPasswordCompleteForm() {
-    const location = useLocation();
+export default function ResetPasswordCompleteForm({ email, otp }: { email: string; otp: string }) {
     const navigate = useNavigate();
-    const { email, otp } = (location.state as { email: string; otp: string })
+    if (!email || !otp) {
+        return <p className="text-destructive">Dữ liệu không hợp lệ. Vui lòng quay lại bước xác thực.</p>;
+    }
 
     const {
         register,
@@ -35,7 +35,7 @@ export function ResetPasswordCompleteForm() {
     const onSubmit = async (data: FormData) => {
         const toastId = showToast.loading('Đang đổi mật khẩu...');
         try {
-            await resetPassword({ email, otp, newPassword: data.newPassword }); // GỬI OTP
+            await resetPassword({ email, otp, newPassword: data.newPassword });
             showToast.dismiss();
             showToast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập.');
             navigate('/login');
@@ -44,24 +44,22 @@ export function ResetPasswordCompleteForm() {
             showToast.error(err.response?.data?.message || 'Đổi mật khẩu thất bại');
         }
     };
+
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <p className="text-sm text-center text-muted-foreground">
                 Đặt mật khẩu mới cho <strong>{email}</strong>
             </p>
-
             <div className="space-y-2">
                 <Label htmlFor="newPassword">Mật khẩu mới</Label>
                 <Input id="newPassword" type="password" placeholder="••••••••" {...register('newPassword')} />
                 {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword.message}</p>}
             </div>
-
             <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
                 <Input id="confirmPassword" type="password" placeholder="••••••••" {...register('confirmPassword')} />
                 {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
             </div>
-
             <Button
                 type="submit"
                 className="w-full bg-purple-600 hover:bg-purple-700"

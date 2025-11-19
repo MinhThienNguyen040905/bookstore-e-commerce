@@ -1,4 +1,3 @@
-// src/hooks/useOTP.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { requestOTP, verifyOTP } from '@/api/authApi';
 import { showToast } from '@/lib/toast';
@@ -13,8 +12,8 @@ export const useOTP = () => {
             return { toastId };
         },
         onSuccess: (_data, email) => {
-            showToast.success('Đã gửi OTP');
             queryClient.setQueryData(['otp-email'], email);
+            showToast.success('Đã gửi OTP');
         },
         onError: (_err, _vars, context) => {
             if (context?.toastId) showToast.dismiss();
