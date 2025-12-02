@@ -1,8 +1,7 @@
-
+import { useAddToCart } from '@/hooks/useAddToCart';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart } from 'lucide-react';
-import { useCartStore } from '@/features/cart/useCartStore';
 import type { CardBook } from '@/types/book';
 import { cn } from '@/lib/utils';
 
@@ -12,18 +11,12 @@ interface BookCardProps {
 }
 
 export function BookCard({ book, className }: BookCardProps) {
-    const addToCart = useCartStore((state) => state.addToCart);
+    const addMutation = useAddToCart();
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        addToCart({
-            id: book.id,
-            title: book.title,
-            author: book.author,
-            price: book.price,
-            cover: book.cover,
-        });
+        addMutation.mutate(book);
     };
 
     return (

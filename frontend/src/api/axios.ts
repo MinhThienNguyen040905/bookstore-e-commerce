@@ -13,51 +13,53 @@ const api = axios.create({
 // Interceptor xử lý response mới từ backend
 api.interceptors.response.use(
     (response) => {
-        // Backend luôn trả về { success: boolean, message?: string, data?: any }
+        const { success, data } = response.data;
+        if (success) return { ...response, data };
 
-        const { success, data, message } = response.data;
-
-        if (success) {
-            // Thành công → trả về data thật để react-query/zustand nhận đúng
-            return { ...response, data };
-        }
-
-        // success === false → ném lỗi để vào catch block
-        const error = new Error(message || 'Có lỗi xảy ra');
-        // Gắn thêm thông tin để dễ debug
+        const error = new Error(response.data.message || 'Lỗi từ server');
         (error as any).response = response;
-        (error as any).isBackendError = true;
         throw error;
     },
+
     async (error) => {
-        // Xử lý 401 + refresh token (giữ nguyên logic cũ)
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // TRÁNH VÒNG LẶP VÔ HẠN: Không retry nếu chính request refresh token bị 401
+        if (
+            error.response?.status === 401 &&
+            !originalRequest._retry &&
+            // QUAN TRỌNG: nếu URL chính là refresh-token thì KHÔNG được retry
+            !originalRequest.url?.includes('/users/refresh-token')
+        ) {
             originalRequest._retry = true;
 
             try {
                 const { data } = await api.post('/users/refresh-token');
-                const newAccessToken = data.data?.accessToken || data.accessToken;
 
-                if (!newAccessToken) throw new Error('Không nhận được access token mới');
+                // Backend trả: { success: true, data: { accessToken: "..." } }
+                const newAccessToken = data?.accessToken || data?.data?.accessToken;
 
+                if (!newAccessToken) {
+                    throw new Error('Không nhận được access token mới');
+                }
+
+                // Cập nhật token trong store + header
                 useAuthStore.getState().setAccessToken(newAccessToken);
-                originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
+                // Thử lại request ban đầu
                 return api(originalRequest);
             } catch (refreshError) {
+                // Refresh token hết hạn hoặc sai → bắt buộc logout
                 useAuthStore.getState().clearAuth();
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
             }
         }
 
-        // Các lỗi khác (mạng, 500, v.v.) hoặc lỗi backend success: false
+        // Các lỗi khác (mạng, 500, hoặc refresh token fail)
         if (error.response) {
-            // Nếu backend trả lỗi có cấu trúc { success: false, message }
-            const backendMessage = error.response.data?.message;
-            const msg = backendMessage || error.message || 'Lỗi không xác định';
+            const msg = error.response.data?.message || error.message;
             const err = new Error(msg);
             (err as any).response = error.response;
             return Promise.reject(err);

@@ -1,4 +1,5 @@
 import { Search, ShoppingCart, Menu, Phone, LogOut, User } from 'lucide-react';
+import { useCartQuery } from '@/hooks/useCartQuery';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/features/cart/useCartStore';
@@ -15,8 +16,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export function Header() {
-    const itemCount = useCartStore((state) => state.getTotalItems());
+    useCartQuery(); // đảm bảo cart luôn được đồng bộ
+
+    const { data: cartData } = useCartQuery(); // ← lấy data từ query
+    const itemCount = cartData?.total_items ?? 0; // ← hiện đúng số loại sách
+
     const { user, logout } = useAuth();
+
 
     console.log('Header user:', user); // Debug
 
