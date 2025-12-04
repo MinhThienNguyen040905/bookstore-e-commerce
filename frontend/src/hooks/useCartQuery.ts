@@ -22,20 +22,19 @@ export const useCartQuery = () => {
     useEffect(() => {
         if (query.data) {
             const normalizedItems = query.data.items.map((item: any) => ({
-                id: item.book_id,           // quan trọng: phải là book_id
+                id: item.book_id,
                 title: item.title,
-                author: item.author || 'Unknown Author',
+                author: item.authors || 'Không rõ tác giả', // ← thêm fallback!
                 price: Number(item.price),
                 cover: item.cover,
                 quantity: item.quantity,
                 stock: item.stock || 999,
             }));
 
-            console.log('Sync cart từ backend:', normalizedItems); // debug
+            console.log('Sync cart từ backend:', normalizedItems);
             setItems(normalizedItems);
         }
     }, [query.data, setItems]);
-
     // Khi đăng xuất → xóa cart
     useEffect(() => {
         if (!user) {

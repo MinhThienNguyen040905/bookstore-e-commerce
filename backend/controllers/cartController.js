@@ -2,6 +2,7 @@
 import CartItem from '../models/CartItem.js';
 import Book from '../models/Book.js';
 import User from '../models/User.js';
+import Author from '../models/Author.js';
 
 // === THÊM SÁCH VÀO GIỎ HÀNG ===
 const addToCart = async (req, res) => {
@@ -36,6 +37,10 @@ const addToCart = async (req, res) => {
     }
 };
 
+import cartController from '../controllers/cartController.js'; // Nếu cần gọi lại getCart
+
+// ... các hàm khác giữ nguyên
+
 // === CẬP NHẬT SỐ LƯỢNG ===
 const updateCart = async (req, res) => {
     const { book_id, quantity } = req.body;
@@ -54,22 +59,20 @@ const updateCart = async (req, res) => {
 
         if (quantity === 0) {
             await cartItem.destroy();
-            return res.success(null, 'Đã xóa sản phẩm khỏi giỏ hàng');
+        } else {
+            cartItem.quantity = quantity;
+            await cartItem.save();
         }
 
-        cartItem.quantity = quantity;
-        await cartItem.save();
-
-        await cartItem.reload({ include: [{ model: Book, attributes: ['title', 'price', 'cover_image'] }] });
-
-        res.success(cartItem, 'Cập nhật giỏ hàng thành công');
+        // DÙNG LUÔN getCart() ĐỂ TRẢ VỀ FULL CART SAU KHI CẬP NHẬT
+        return getCart(req, res); // <-- Quan trọng: gọi lại getCart
     } catch (err) {
-        console.error('Lỗi cập nhật giỏ:', err);
+        console.error('Lỗi cập nhật giỏ hàng:', err);
         res.error('Lỗi server', 500);
     }
 };
 
-// === XÓA SẢN PHẨM KHỎI GIỎ ===
+// === XÓA SẢN PHẨM ===
 const removeFromCart = async (req, res) => {
     const { book_id } = req.params;
     const userId = req.user.user_id;
@@ -79,7 +82,9 @@ const removeFromCart = async (req, res) => {
         if (!cartItem) return res.error('Không tìm thấy sản phẩm trong giỏ hàng', 404);
 
         await cartItem.destroy();
-        res.success(null, 'Đã xóa sản phẩm khỏi giỏ hàng');
+
+        // DÙNG LUÔN getCart() ĐỂ TRẢ VỀ GIỎ HÀNG MỚI
+        return getCart(req, res); // <-- Gọi lại getCart
     } catch (err) {
         console.error('Lỗi xóa giỏ hàng:', err);
         res.error('Lỗi server', 500);
@@ -96,14 +101,21 @@ const getCart = async (req, res) => {
             include: [
                 {
                     model: Book,
-                    attributes: ['book_id', 'title', 'price', 'cover_image', 'stock']
+                    attributes: ['book_id', 'title', 'price', 'cover_image', 'stock'],
+                    include: [
+                        {
+                            model: Author,
+                            attributes: ['name'],
+                            through: { attributes: [] }
+                        }
+                    ]
                 }
             ],
             order: [['createdAt', 'DESC']]
         });
 
         // Tính tổng tiền
-        const total = cartItems.reduce((sum, item) => sum + item.quantity * item.Book.price, 0);
+        const total = cartItems.reduce((sum, item) => sum + item.quantity * Number(item.Book.price), 0);
 
         const result = {
             items: cartItems.map(item => ({
@@ -113,7 +125,8 @@ const getCart = async (req, res) => {
                 cover: item.Book.cover_image,
                 price: Number(item.Book.price),
                 stock: item.Book.stock,
-                quantity: item.quantity
+                quantity: item.quantity,
+                authors: item.Book.Authors?.map(a => a.name).join(', ') || 'Không rõ tác giả' // ← THÊM TRƯỜNG NÀY
             })),
             total_items: cartItems.length,
             total_price: Number(total)

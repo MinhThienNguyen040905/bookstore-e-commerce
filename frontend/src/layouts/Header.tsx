@@ -37,12 +37,12 @@ export function Header() {
                     <div className="flex items-center gap-4">
                         <Link to="/privacy" className="hidden sm:inline text-muted-foreground hover:text-foreground">Privacy</Link>
                         <Link to="/shipping" className="hidden sm:inline text-muted-foreground hover:text-foreground">Shipping</Link>
-                        <div className="flex items-center gap-1">
+                        <Link to="/cart" className="flex items-center gap-1 hover:text-purple-600 transition">
                             <ShoppingCart className="w-4 h-4" />
                             <span className="w-5 h-5 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
                                 {itemCount}
                             </span>
-                        </div>
+                        </Link>
                     </div>
                 </div>
                 <div className="flex items-center justify-between py-4">
