@@ -5,6 +5,8 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import ResetPasswordFlow from '@/pages/ResetPasswordFlow';
 import CartPage from '@/pages/CartPage';
+import PaymentPage from '@/pages/PaymentPage';
+import OrderSuccessPage from '@/pages/OrderSuccessPage';
 
 export const routes: RouteObject[] = [
     { path: '/', element: <Home /> },
@@ -13,4 +15,6 @@ export const routes: RouteObject[] = [
     { path: '/register', element: <RegisterPage /> },
     { path: '/reset-password', element: <ResetPasswordFlow /> },
     { path: '/cart', element: <CartPage /> },
+    { path: '/checkout', element: <PaymentPage /> },
+    { path: '/order-success', element: <OrderSuccessPage /> },
 ];
