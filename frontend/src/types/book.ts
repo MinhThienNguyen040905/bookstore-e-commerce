@@ -3,25 +3,25 @@ import type { Review } from "./Review";
 
 // src/types/book.ts
 export interface Book {
-    id: number;
+    book_id: number;
     title: string;
     description: string;
     price: number;
     stock: number;
-    cover: string;
-    releaseDate: string;
+    cover_image: string;
+    release_date: string;
     isbn: string;
     publisher: string;
-    author: string;
+    authors: string;
     genres: Genre[];
     avg_rating: number;
     reviews: Review[];
 }
 
 export interface CardBook {
-    id: number;
+    book_id: number;
     title: string;
-    author: string;
+    authors: string;
     price: number;
-    cover: string;
+    cover_image: string;
 }

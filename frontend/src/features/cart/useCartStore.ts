@@ -5,7 +5,7 @@ import type { CardBook } from '@/types/book';
 
 export interface CartItem extends CardBook {
     quantity: number;
-    stock: number; // thêm để kiểm tra tồn kho
+    //   stock: number; // thêm để kiểm tra tồn kho
 }
 
 interface CartStore {
@@ -28,29 +28,29 @@ export const useCartStore = create<CartStore>()(
 
             addToCart: (book) =>
                 set((state) => {
-                    const existing = state.items.find((i) => i.id === book.id);
+                    const existing = state.items.find((i) => i.book_id === book.book_id);
                     if (existing) {
                         return {
                             items: state.items.map((i) =>
-                                i.id === book.id ? { ...i, quantity: i.quantity + 1 } : i
+                                i.book_id === book.book_id ? { ...i, quantity: i.quantity + 1 } : i
                             ),
                         };
                     }
                     return {
-                        items: [...state.items, { ...book, quantity: 1, stock: book.stock || 999 }],
+                        items: [...state.items, { ...book, quantity: 1 }],
                     };
                 }),
 
             updateQuantity: (id, quantity) =>
                 set((state) => ({
                     items: state.items.map((i) =>
-                        i.id === id ? { ...i, quantity: Math.max(1, quantity) } : i
+                        i.book_id === id ? { ...i, quantity: Math.max(1, quantity) } : i
                     ),
                 })),
 
             removeFromCart: (id) =>
                 set((state) => ({
-                    items: state.items.filter((i) => i.id !== id),
+                    items: state.items.filter((i) => i.book_id !== id),
                 })),
 
             clearCart: () => set({ items: [] }),

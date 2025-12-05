@@ -122,7 +122,7 @@ const getCart = async (req, res) => {
                 cart_item_id: item.cart_item_id,
                 book_id: item.book_id,
                 title: item.Book.title,
-                cover: item.Book.cover_image,
+                cover_image: item.Book.cover_image,
                 price: Number(item.Book.price),
                 stock: item.Book.stock,
                 quantity: item.quantity,

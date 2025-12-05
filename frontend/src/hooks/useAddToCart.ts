@@ -19,7 +19,7 @@ export const useAddToCart = () => {
                 navigate('/login', { state: { from: location.pathname } });
                 return Promise.reject(new Error('Chưa đăng nhập'));
             }
-            return addToCartApi({ book_id: book.id, quantity: 1 });
+            return addToCartApi({ book_id: book.book_id, quantity: 1 });
         },
 
         // Dùng onMutate để lấy được book

@@ -1,26 +1,20 @@
 
 import { Button } from '@/components/ui/button';
 import { Star, Plus, Minus } from 'lucide-react';
-import { useCartStore } from '@/features/cart/useCartStore';
+
 import type { Book } from '@/types/book';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useAddToCart } from '@/hooks/useAddToCart';
+
 
 export function BookDetailCard({ book }: { book: Book }) {
     const [quantity, setQuantity] = useState(1);
-    const addToCart = useCartStore((state) => state.addToCart);
+
+    const addMutation = useAddToCart();
 
     const handleAddToCart = () => {
-        for (let i = 0; i < quantity; i++) {
-            // Tạo object chỉ chứa các field cần cho cart
-            addToCart({
-                id: book.id,
-                title: book.title,
-                author: book.author,
-                price: book.price,
-                cover: book.cover,
-            });
-        }
+        addMutation.mutate(book);
     };
 
     return (
@@ -31,7 +25,7 @@ export function BookDetailCard({ book }: { book: Book }) {
                     <div className="sticky top-8">
                         <div className="relative group">
                             <img
-                                src={book.cover}
+                                src={book.cover_image}
                                 alt={book.title}
                                 className="w-full rounded-lg shadow-2xl object-cover border border-gray-200"
                             />
@@ -47,7 +41,7 @@ export function BookDetailCard({ book }: { book: Book }) {
                             {book.title}
                         </h1>
                         <p className="text-xl text-purple-700 mt-2 font-medium">
-                            {book.author}
+                            {book.authors}
                         </p>
                     </div>
 
@@ -122,7 +116,7 @@ export function BookDetailCard({ book }: { book: Book }) {
                         <div>
                             <span className="text-purple-600 font-medium">Release date:</span>
                             <span className="ml-2 text-gray-700">
-                                {new Date(book.releaseDate).toLocaleDateString('vi-VN')}
+                                {new Date(book.release_date).toLocaleDateString('vi-VN')}
                             </span>
                         </div>
                         <div>

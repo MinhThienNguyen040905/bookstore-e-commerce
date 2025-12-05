@@ -96,7 +96,7 @@ export default function PaymentPage() {
                                 <div className="space-y-4">
                                     {items.map((item) => (
                                         <div key={item.book_id} className="flex gap-4">
-                                            <img src={item.cover} alt={item.title} className="w-20 h-28 object-cover rounded" />
+                                            <img src={item.cover_image} alt={item.title} className="w-20 h-28 object-cover rounded" />
                                             <div className="flex-1">
                                                 <h3 className="font-medium">{item.title}</h3>
                                                 <p className="text-sm text-muted-foreground">{item.authors}</p>

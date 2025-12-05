@@ -25,7 +25,7 @@ export function BookReviews({ reviews, className }: BookReviewsProps) {
             <div className="space-y-6">
                 {reviews.map((review) => (
                     <div
-                        key={review.id}
+                        key={review.review_id}
                         className="flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200"
                     >
                         {/* Avatar */}
@@ -42,7 +42,7 @@ export function BookReviews({ reviews, className }: BookReviewsProps) {
                             <div className="flex items-center justify-between">
                                 <h3 className="font-semibold text-lg">{review.user.name}</h3>
                                 <time className="text-sm text-muted-foreground">
-                                    {format(new Date(review.date), 'dd/MM/yyyy')}
+                                    {format(new Date(review.review_date), 'dd/MM/yyyy')}
                                 </time>
                             </div>
 

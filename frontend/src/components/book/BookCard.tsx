@@ -20,11 +20,11 @@ export function BookCard({ book, className }: BookCardProps) {
     };
 
     return (
-        <Link to={`/book/${book.id}`} className="block group">
+        <Link to={`/book/${book.book_id}`} className="block group">
             <div className={cn("flex flex-col", className)}>
                 <div className="relative overflow-hidden rounded-lg bg-gray-100">
                     <img
-                        src={book.cover}
+                        src={book.cover_image}
                         alt={book.title}
                         className="aspect-[3/4] w-full object-cover transition-transform group-hover:scale-105"
                     />
@@ -38,7 +38,7 @@ export function BookCard({ book, className }: BookCardProps) {
 
                 <div className="mt-3 flex flex-col gap-1">
                     <h3 className="font-medium text-sm line-clamp-2">{book.title}</h3>
-                    <p className="text-xs text-muted-foreground">{book.author}</p>
+                    <p className="text-xs text-muted-foreground">{book.authors}</p>
                     <p className="font-semibold">${book.price.toFixed(2)}</p>
                 </div>
 

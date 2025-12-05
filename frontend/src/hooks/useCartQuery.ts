@@ -22,11 +22,11 @@ export const useCartQuery = () => {
     useEffect(() => {
         if (query.data) {
             const normalizedItems = query.data.items.map((item: any) => ({
-                id: item.book_id,
+                book_id: item.book_id,
                 title: item.title,
-                author: item.authors || 'Không rõ tác giả', // ← thêm fallback!
+                authors: item.authors || 'Không rõ tác giả', // ← thêm fallback!
                 price: Number(item.price),
-                cover: item.cover,
+                cover_image: item.cover,
                 quantity: item.quantity,
                 stock: item.stock || 999,
             }));

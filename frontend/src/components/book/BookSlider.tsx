@@ -41,7 +41,7 @@ export function BookSlider({ title, books }: BookSliderProps) {
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {books.map((book) => (
-                        <div key={book.id} className="flex-shrink-0 w-48">
+                        <div key={book.book_id} className="flex-shrink-0 w-48">
                             <BookCard book={book} />
                         </div>
                     ))}

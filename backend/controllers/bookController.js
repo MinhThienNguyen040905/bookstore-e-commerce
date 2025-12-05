@@ -67,9 +67,9 @@ const getBooks = async (req, res) => {
         });
 
         const result = books.map(book => ({
-            id: book.book_id,
+            book_id: book.book_id,
             title: book.title,
-            cover: book.cover_image,
+            cover_image: book.cover_image,
             price: Number(book.price),
             stock: book.stock,
             publisher: book.Publisher?.name,
@@ -96,11 +96,11 @@ const getNewReleases = async (req, res) => {
         });
 
         const result = books.map(book => ({
-            id: book.book_id,
+            book_id: book.book_id,
             title: book.title,
-            cover: book.cover_image,
+            cover_image: book.cover_image,
             price: Number(book.price),
-            releaseDate: book.release_date,
+            release_date: book.release_date,
             authors: book.Authors.map(a => a.name).join(', ')
         }));
 
@@ -140,9 +140,9 @@ const getTopRatedBooks = async (req, res) => {
         });
 
         const result = books.map(book => ({
-            id: book.book_id,
+            book_id: book.book_id,
             title: book.title,
-            cover: book.cover_image,
+            cover_image: book.cover_image,
             price: Number(book.price),
             avgRating: Number(book.avgRating || 0).toFixed(1),
             totalReviews: Number(book.totalReviews || 0),
@@ -188,25 +188,25 @@ const getBookById = async (req, res) => {
             : 0;
 
         const result = {
-            id: book.book_id,
+            book_id: book.book_id,
             title: book.title,
             description: book.description,
             price: Number(book.price),
             stock: book.stock,
-            cover: book.cover_image,
-            releaseDate: book.release_date,
+            cover_image: book.cover_image,
+            release_date: book.release_date,
             isbn: book.isbn,
             publisher: book.Publisher?.name,
             authors: book.Authors?.map(a => a.name).join(', '),
             genres: book.Genres,
             avg_rating: Number(avgRating.toFixed(1)),
             reviews: book.Reviews?.map(r => ({
-                id: r.review_id,
+                review_id: r.review_id,
                 rating: r.rating,
                 comment: r.comment,
-                date: r.review_date,
+                review_date: r.review_date,
                 user: {
-                    id: r.User?.user_id,
+                    user_id: r.User?.user_id,
                     name: r.User?.name,
                     avatar: r.User?.avatar
                 }

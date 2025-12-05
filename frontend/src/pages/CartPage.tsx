@@ -61,7 +61,7 @@ export default function CartPage() {
     };
 
     const selectedTotal = items
-        .filter(i => selectedItems.has(i.id))
+        .filter(i => selectedItems.has(i.book_id))
         .reduce((sum, i) => sum + i.price * i.quantity, 0);
 
     if (isLoading) return <div className="min-h-screen flex items-center justify-center">Đang tải giỏ hàng...</div>;
@@ -121,7 +121,7 @@ export default function CartPage() {
                                             />
 
                                             <img
-                                                src={item.cover}
+                                                src={item.cover_image}
                                                 alt={item.title}
                                                 className="w-20 h-28 object-cover rounded"
                                             />
