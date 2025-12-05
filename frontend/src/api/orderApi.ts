@@ -8,9 +8,9 @@ export interface PromoCheckBody {
 
 export interface PromoResponse {
     code: string;
-    discount_percent: string;
+    discount_percent: number;
     discount_amount: number;
-    min_amount: string;
+    min_amount: number;
     expiry_date: string;
     final_price: number;
     message: string;
@@ -25,16 +25,16 @@ export interface CreateOrderBody {
 
 export interface OrderResponse {
     order_id: number;
-    total_price: string;
+    total_price: number;
     status: string;
     payment_method: string;
     address: string;
     phone: string;
-    PromoCode?: { code: string; discount_percent: string };
+    PromoCode?: { code: string; discount_percent: number } | null;
     OrderItems: Array<{
         book_id: number;
         quantity: number;
-        price: string;
+        price: number;
         Book: {
             title: string;
             cover_image: string;

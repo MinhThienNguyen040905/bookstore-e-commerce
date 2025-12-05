@@ -4,7 +4,15 @@ import sequelize from '../config/db.js';
 
 const Order = sequelize.define('Order', {
     order_id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    total_price: { type: DataTypes.DECIMAL(10, 2), allowNull: false, validate: { min: 0 } },
+    total_price: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        validate: { min: 0 },
+        get() {
+            const value = this.getDataValue('total_price');
+            return value == null ? null : parseFloat(value);
+        }
+    },
     status: {
         type: DataTypes.ENUM('processing', 'shipped', 'delivered', 'cancelled'),
         defaultValue: 'processing',
