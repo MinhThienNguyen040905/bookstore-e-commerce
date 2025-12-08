@@ -7,6 +7,11 @@ import { useCartStore } from '@/features/cart/useCartStore';
 import { showToast } from '@/lib/toast';
 import type { CardBook } from '@/types/book';
 
+interface AddToCartVariables {
+    book: CardBook;
+    quantity?: number;
+}
+
 export const useAddToCart = () => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
@@ -14,18 +19,18 @@ export const useAddToCart = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (book: CardBook) => {
+        mutationFn: ({ book, quantity = 1 }: AddToCartVariables) => {
             if (!user) {
                 navigate('/login', { state: { from: location.pathname } });
                 return Promise.reject(new Error('Chưa đăng nhập'));
             }
-            return addToCartApi({ book_id: book.book_id, quantity: 1 });
+            // Gửi quantity xuống API
+            return addToCartApi({ book_id: book.book_id, quantity });
         },
-
         // Dùng onMutate để lấy được book
-        onMutate: async (book) => {
-            // Optimistic update: tăng ngay lập tức
-            addToCartLocal(book);
+        onMutate: async ({ book, quantity = 1 }) => {
+            // Cập nhật store local ngay lập tức với số lượng đúng
+            addToCartLocal(book, quantity);
             return { book };
         },
 
@@ -35,12 +40,8 @@ export const useAddToCart = () => {
             showToast.success('Đã thêm vào giỏ hàng');
         },
 
-        onError: (err: any, book, context) => {
-            // Nếu lỗi → rollback lại store
+        onError: (err: any) => {
             showToast.error(err.message || 'Thêm vào giỏ thất bại');
-
-            // Optional: rollback optimistic update
-            // queryClient.setQueryData(['cart'], oldData);
-        },
+        }
     });
 };

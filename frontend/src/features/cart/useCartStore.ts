@@ -11,7 +11,7 @@ export interface CartItem extends CardBook {
 interface CartStore {
     items: CartItem[];
     setItems: (items: CartItem[]) => void;
-    addToCart: (book: CardBook) => void;
+    addToCart: (book: CardBook, quantity?: number) => void;
     removeFromCart: (id: number) => void;
     updateQuantity: (id: number, quantity: number) => void;
     clearCart: () => void;
@@ -26,18 +26,18 @@ export const useCartStore = create<CartStore>()(
 
             setItems: (items) => set({ items }),
 
-            addToCart: (book) =>
+            addToCart: (book, quantity = 1) =>
                 set((state) => {
                     const existing = state.items.find((i) => i.book_id === book.book_id);
                     if (existing) {
                         return {
                             items: state.items.map((i) =>
-                                i.book_id === book.book_id ? { ...i, quantity: i.quantity + 1 } : i
+                                i.book_id === book.book_id ? { ...i, quantity: i.quantity + quantity } : i
                             ),
                         };
                     }
                     return {
-                        items: [...state.items, { ...book, quantity: 1 }],
+                        items: [...state.items, { ...book, quantity: quantity }],
                     };
                 }),
 

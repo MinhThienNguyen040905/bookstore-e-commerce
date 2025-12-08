@@ -16,7 +16,7 @@ export function BookCard({ book, className }: BookCardProps) {
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        addMutation.mutate(book);
+        addMutation.mutate({ book, quantity: 1 });
     };
 
     return (

@@ -14,7 +14,7 @@ export function BookDetailCard({ book }: { book: Book }) {
     const addMutation = useAddToCart();
 
     const handleAddToCart = () => {
-        addMutation.mutate(book);
+        addMutation.mutate({ book, quantity });
     };
 
     return (
