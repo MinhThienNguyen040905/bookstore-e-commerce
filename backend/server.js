@@ -15,6 +15,7 @@ import orderRoutes from './routes/orders.js';
 import reviewRoutes from './routes/reviews.js';
 import promoRoutes from './routes/promos.js';
 import statsRoutes from './routes/stats.js';
+import wishlistRoutes from './routes/wishlist.js';
 
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/promos', promoRoutes);
 app.use('/api/admin/stats', statsRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 // Sync DB and start server
 async function start() {

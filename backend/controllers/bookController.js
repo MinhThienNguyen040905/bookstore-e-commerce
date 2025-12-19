@@ -45,40 +45,178 @@ const addBook = async (req, res) => {
     }
 };
 
-// === GET ALL BOOKS ===
-const getBooks = async (req, res) => {
-    const { title, author, genre, min_price, max_price, sort } = req.query;
-    let where = {};
+// === HELPER: Build WHERE clause for books ===
+const buildBookFilters = (queryParams) => {
+    const { keyword, min_price, max_price } = queryParams;
+    const where = {};
 
-    if (title) where.title = { [Op.like]: `%${title}%` };
-    if (min_price) where.price = { ...where.price, [Op.gte]: min_price };
-    if (max_price) where.price = { ...where.price, [Op.lte]: max_price };
+    // Search by title
+    if (keyword) {
+        where.title = { [Op.like]: `%${keyword}%` };
+    }
+
+    // Price range filter
+    if (min_price || max_price) {
+        where.price = {};
+        if (min_price) where.price[Op.gte] = parseFloat(min_price);
+        if (max_price) where.price[Op.lte] = parseFloat(max_price);
+    }
+
+    return where;
+};
+
+// === HELPER: Build ORDER clause ===
+const avgRatingExpr = sequelize.fn('COALESCE', sequelize.fn('AVG', sequelize.col('Reviews.rating')), 0);
+
+const buildBookOrder = (sort) => {
+    switch (sort) {
+        case 'price-asc':
+            return [['price', 'ASC']];
+        case 'price-desc':
+            return [['price', 'DESC']];
+        case 'newest':
+            return [['release_date', 'DESC']];
+        case 'top-rated':
+            return [[avgRatingExpr, 'DESC']];
+        default:
+            return [['book_id', 'DESC']]; // Default: newest added
+    }
+};
+
+// === GET ALL BOOKS (ENHANCED) ===
+const getBooks = async (req, res) => {
+    const { keyword, min_price, max_price, genre, rating, sort, page = 1, limit = 20 } = req.query;
 
     try {
-        const books = await Book.findAll({
+        // Build basic filters
+        const where = buildBookFilters({ keyword, min_price, max_price });
+        
+        // Pagination
+        const currentPage = Math.max(parseInt(page) || 1, 1);
+        const queryLimit = Math.max(parseInt(limit) || 20, 1);
+        const offset = (currentPage - 1) * queryLimit;
+
+        // Build includes for filtering stage (only need Genre & Review filters)
+        const includeForFilter = [
+            {
+                model: Review,
+                attributes: [],
+                required: false
+            }
+        ];
+
+        if (genre) {
+            const genreValues = genre.split(',').map(g => g.trim());
+            const isNumeric = genreValues.every(g => !isNaN(g));
+
+            includeForFilter.push({
+                model: Genre,
+                attributes: [],
+                through: { attributes: [] },
+                where: isNumeric
+                    ? { genre_id: { [Op.in]: genreValues } }
+                    : { name: { [Op.in]: genreValues } },
+                required: true
+            });
+        }
+
+        const orderClause = buildBookOrder(sort);
+        const havingCondition = rating
+            ? sequelize.where(avgRatingExpr, Op.gte, parseFloat(rating))
+            : undefined;
+
+        const baseGroupOptions = {
             where,
-            attributes: ['book_id', 'title', 'cover_image', 'price', 'stock'],
+            include: includeForFilter,
+            group: ['Book.book_id', 'Book.price', 'Book.release_date'],
+            having: havingCondition,
+            subQuery: false,
+            raw: true
+        };
+
+        const pageGroupOptions = {
+            ...baseGroupOptions,
+            attributes: [
+                'book_id',
+                'price',
+                'release_date',
+                [avgRatingExpr, 'avgRating']
+            ],
+            order: orderClause,
+            limit: queryLimit,
+            offset
+        };
+
+        const countGroupOptions = {
+            ...baseGroupOptions,
+            attributes: ['book_id'],
+            order: undefined,
+            limit: undefined,
+            offset: undefined
+        };
+
+        // Step 1: fetch IDs that match the filters
+        const filteredBooks = await Book.findAll(pageGroupOptions);
+        const totalDocs = (await Book.findAll(countGroupOptions)).length;
+
+        if (!filteredBooks.length) {
+            return res.success({
+                books: [],
+                pagination: {
+                    page: currentPage,
+                    limit: queryLimit,
+                    total: 0,
+                    totalPages: 0
+                }
+            }, 'Không tìm thấy sách nào');
+        }
+
+        const targetIds = filteredBooks.map(book => book.book_id);
+        const ratingMap = filteredBooks.reduce((acc, book) => {
+            acc[book.book_id] = Number(book.avgRating ?? 0);
+            return acc;
+        }, {});
+
+        // Step 2: fetch detailed data without GROUP BY (preserves Authors/Genres)
+        const finalBooks = await Book.findAll({
+            where: { book_id: { [Op.in]: targetIds } },
             include: [
                 { model: Publisher, attributes: ['name'] },
                 { model: Author, attributes: ['name'], through: { attributes: [] } },
                 { model: Genre, attributes: ['name'], through: { attributes: [] } }
             ],
-            order: sort === 'price' ? [['price', 'ASC']] : [['book_id', 'DESC']]
+            order: [
+                [sequelize.literal(`FIELD(Book.book_id, ${targetIds.join(',')})`)]
+            ]
         });
 
-        const result = books.map(book => ({
-            book_id: book.book_id,
-            title: book.title,
-            cover_image: book.cover_image,
-            price: Number(book.price),
-            stock: book.stock,
-            publisher: book.Publisher?.name,
-            authors: book.Authors?.map(a => a.name).join(', '),
-            genres: book.Genres?.map(g => g.name).join(', ')
-        }));
+        const result = finalBooks.map(book => {
+            const bookData = book.get({ plain: true });
+            return {
+                book_id: bookData.book_id,
+                title: bookData.title,
+                cover_image: bookData.cover_image,
+                price: Number(bookData.price),
+                stock: bookData.stock,
+                avg_rating: Number((ratingMap[bookData.book_id] ?? 0).toFixed(1)),
+                publisher: bookData.Publisher?.name || null,
+                authors: bookData.Authors?.map(a => a.name).join(', ') || '',
+                genres: bookData.Genres?.map(g => g.name).join(', ') || ''
+            };
+        });
 
-        res.success(result, 'Lấy danh sách sách thành công');
+        res.success({
+            books: result,
+            pagination: {
+                page: currentPage,
+                limit: queryLimit,
+                total: totalDocs,
+                totalPages: Math.ceil(totalDocs / queryLimit)
+            }
+        }, 'Lấy danh sách sách thành công');
+
     } catch (err) {
+        console.error('getBooks error:', err);
         res.error('Lỗi server', 500);
     }
 };
