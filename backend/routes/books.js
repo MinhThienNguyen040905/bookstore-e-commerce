@@ -8,6 +8,7 @@ router.get('/', bookController.getBooks);
 router.get('/new-releases', bookController.getNewReleases);
 router.get('/top-rated', bookController.getTopRatedBooks);
 router.get('/:id', bookController.getBookById);
-// Add put/delete routes...
+router.put('/:id', auth, adminAuth, bookController.uploadCover, bookController.updateBook);
+router.delete('/:id', auth, adminAuth, bookController.deleteBook);
 
 export default router;

@@ -14,6 +14,7 @@ import cartRoutes from './routes/cart.js';
 import orderRoutes from './routes/orders.js';
 import reviewRoutes from './routes/reviews.js';
 import promoRoutes from './routes/promos.js';
+import statsRoutes from './routes/stats.js';
 
 
 const app = express();
@@ -30,6 +31,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/promos', promoRoutes);
+app.use('/api/admin/stats', statsRoutes);
 
 // Sync DB and start server
 async function start() {

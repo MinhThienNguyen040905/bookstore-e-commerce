@@ -219,4 +219,130 @@ const getBookById = async (req, res) => {
     }
 };
 
-export default { uploadCover, addBook, getBooks, getNewReleases, getTopRatedBooks, getBookById };
+// === UPDATE BOOK ===
+const updateBook = async (req, res) => {
+    const { id } = req.params;
+    const { title, description, publisher_id, stock, price, release_date, isbn, authors, genres } = req.body;
+
+    try {
+        // Validation: ID phải là số
+        if (isNaN(id)) {
+            return res.error('ID sách không hợp lệ', 400);
+        }
+
+        const book = await Book.findByPk(id);
+        if (!book) {
+            return res.error('Không tìm thấy sách', 404);
+        }
+
+        // Validation: Price phải là số dương
+        if (price !== undefined && (isNaN(price) || price < 0)) {
+            return res.error('Giá sách phải là số dương', 400);
+        }
+
+        // Validation: Stock phải là số nguyên không âm
+        if (stock !== undefined && (isNaN(stock) || stock < 0 || !Number.isInteger(Number(stock)))) {
+            return res.error('Số lượng tồn kho phải là số nguyên không âm', 400);
+        }
+
+        // Validation: Publisher ID phải là số
+        if (publisher_id !== undefined && isNaN(publisher_id)) {
+            return res.error('ID nhà xuất bản không hợp lệ', 400);
+        }
+
+        // Nếu có upload ảnh mới
+        let cover_image = book.cover_image; // Giữ ảnh cũ mặc định
+        if (req.file) {
+            const result = await cloudinary.uploader.upload(req.file.path);
+            cover_image = result.secure_url;
+            fs.unlinkSync(req.file.path); // Xóa file tạm
+
+            // (Bonus) Xóa ảnh cũ trên Cloudinary
+            if (book.cover_image) {
+                try {
+                    const urlParts = book.cover_image.split('/');
+                    const publicIdWithExt = urlParts[urlParts.length - 1];
+                    const publicId = publicIdWithExt.split('.')[0];
+                    await cloudinary.uploader.destroy(publicId);
+                } catch (err) {
+                    console.log('Không xóa được ảnh cũ:', err.message);
+                }
+            }
+        }
+
+        // Update các field (chỉ update những field được truyền vào)
+        const updateData = {};
+        if (title !== undefined) updateData.title = title;
+        if (description !== undefined) updateData.description = description;
+        if (publisher_id !== undefined) updateData.publisher_id = publisher_id;
+        if (stock !== undefined) updateData.stock = stock;
+        if (price !== undefined) updateData.price = price;
+        if (release_date !== undefined) updateData.release_date = release_date;
+        if (isbn !== undefined) updateData.isbn = isbn;
+        if (cover_image) updateData.cover_image = cover_image;
+
+        await book.update(updateData);
+
+        // Update authors nếu có
+        if (authors) {
+            const authorInstances = await Author.findAll({ 
+                where: { author_id: authors.split(',').map(id => id.trim()) } 
+            });
+            await book.setAuthors(authorInstances); // setAuthors thay vì addAuthors
+        }
+
+        // Update genres nếu có
+        if (genres) {
+            const genreInstances = await Genre.findAll({ 
+                where: { genre_id: genres.split(',').map(id => id.trim()) } 
+            });
+            await book.setGenres(genreInstances);
+        }
+
+        res.success({ book_id: book.book_id }, 'Cập nhật sách thành công');
+
+    } catch (err) {
+        console.error('Update book error:', err);
+        res.error(err.message || 'Lỗi cập nhật sách', 400);
+    }
+};
+
+// === DELETE BOOK ===
+const deleteBook = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Validation: ID phải là số
+        if (isNaN(id)) {
+            return res.error('ID sách không hợp lệ', 400);
+        }
+
+        const book = await Book.findByPk(id);
+        if (!book) {
+            return res.error('Không tìm thấy sách', 404);
+        }
+
+        // (Bonus) Xóa ảnh trên Cloudinary
+        if (book.cover_image) {
+            try {
+                const urlParts = book.cover_image.split('/');
+                const publicIdWithExt = urlParts[urlParts.length - 1];
+                const publicId = publicIdWithExt.split('.')[0];
+                await cloudinary.uploader.destroy(publicId);
+            } catch (err) {
+                console.log('Không xóa được ảnh:', err.message);
+            }
+        }
+
+        // Xóa record (cascade sẽ tự xóa reviews, cart items, etc.)
+        await book.destroy();
+
+        res.success(null, 'Xóa sách thành công');
+
+    } catch (err) {
+        console.error('Delete book error:', err);
+        res.error('Lỗi xóa sách', 500);
+    }
+};
+
+export default { uploadCover, addBook, updateBook, deleteBook, getBooks, getNewReleases, getTopRatedBooks, getBookById };
