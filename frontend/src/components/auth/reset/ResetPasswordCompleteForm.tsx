@@ -3,15 +3,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { resetPasswordSchema, type ResetPasswordData } from '@/schemas/otp.schema'; // Import schema từ file chung
+import { resetPasswordSchema, type ResetPasswordData } from '@/schemas/otp.schema';
 import { resetPassword } from '@/api/authApi';
 import { showToast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
 
 export default function ResetPasswordCompleteForm({ email, otp }: { email: string; otp: string }) {
     const navigate = useNavigate();
+
     if (!email || !otp) {
-        return <p className="text-destructive">Dữ liệu không hợp lệ. Vui lòng quay lại bước xác thực.</p>;
+        return <p className="text-red-500 text-center">Invalid Data. Please restart the process.</p>;
     }
 
     const {
@@ -19,50 +20,57 @@ export default function ResetPasswordCompleteForm({ email, otp }: { email: strin
         handleSubmit,
         formState: { errors, isSubmitting },
     } = useForm<ResetPasswordData>({
-        resolver: zodResolver(resetPasswordSchema), // Sử dụng schema import từ otp.schema.ts
+        resolver: zodResolver(resetPasswordSchema),
     });
 
     const onSubmit = async (data: ResetPasswordData) => {
-        const toastId = showToast.loading('Đang đổi mật khẩu...');
+        const toastId = showToast.loading('Updating password...');
         try {
             await resetPassword({
                 email,
                 otp,
-                newPassword: data.newPassword, // Chỉ gửi cần thiết, bỏ confirmPassword
+                newPassword: data.newPassword,
             });
             showToast.dismiss(toastId);
-            showToast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập.');
+            showToast.success('Password updated successfully! Please login.');
             navigate('/login');
         } catch (err: any) {
             showToast.dismiss(toastId);
-            const errorMessage = err.response?.data?.message || 'Đổi mật khẩu thất bại';
+            const errorMessage = err.response?.data?.message || 'Failed to update password';
             showToast.error(errorMessage);
-            // Nếu cần: Handle "OTP hết hạn" để reset step (pass prop từ parent như trước)
-            // if (errorMessage.includes('OTP hết hạn')) { onOtpExpired?.(); }
         }
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <p className="text-sm text-center text-muted-foreground">
-                Đặt mật khẩu mới cho <strong>{email}</strong>
-            </p>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
-                <Label htmlFor="newPassword">Mật khẩu mới</Label>
-                <Input id="newPassword" type="password" placeholder="••••••••" {...register('newPassword')} />
-                {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword.message}</p>}
+                <Label htmlFor="newPassword" classname="text-stone-600 font-medium">New Password</Label>
+                <Input
+                    id="newPassword"
+                    type="password"
+                    placeholder="Enter new password"
+                    {...register('newPassword')}
+                    className="h-12 border-stone-300 focus:border-[#0df2d7] focus:ring-[#0df2d7] bg-white rounded-lg"
+                />
+                {errors.newPassword && <p className="text-sm text-red-500">{errors.newPassword.message}</p>}
             </div>
             <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
-                <Input id="confirmPassword" type="password" placeholder="••••••••" {...register('confirmPassword')} />
-                {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+                <Label htmlFor="confirmPassword" classname="text-stone-600 font-medium">Confirm Password</Label>
+                <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm new password"
+                    {...register('confirmPassword')}
+                    className="h-12 border-stone-300 focus:border-[#0df2d7] focus:ring-[#0df2d7] bg-white rounded-lg"
+                />
+                {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
             </div>
             <Button
                 type="submit"
-                className="w-full bg-purple-600 hover:bg-purple-700"
+                className="w-full h-12 bg-[#0df2d7] hover:bg-[#00dcc3] text-stone-900 font-bold text-base tracking-wide rounded-lg shadow-sm"
                 disabled={isSubmitting}
             >
-                {isSubmitting ? 'Đang xử lý...' : 'Đổi mật khẩu'}
+                {isSubmitting ? 'Updating...' : 'Reset Password'}
             </Button>
         </form>
     );
