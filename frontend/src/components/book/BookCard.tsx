@@ -1,9 +1,9 @@
+// src/components/book/BookCard.tsx
 import { useAddToCart } from '@/hooks/useAddToCart';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Heart, ShoppingCart } from 'lucide-react';
 import type { CardBook } from '@/types/book';
 import { cn } from '@/lib/utils';
+import { Star } from 'lucide-react'; // Dùng Lucide thay cho Material Symbols
 
 interface BookCardProps {
     book: CardBook;
@@ -19,36 +19,49 @@ export function BookCard({ book, className }: BookCardProps) {
         addMutation.mutate({ book, quantity: 1 });
     };
 
+    // Giả lập rating (vì API CardBook hiện tại chưa có field rating, bạn có thể bổ sung sau)
+    const rating = 4.5;
+
     return (
-        <Link to={`/book/${book.book_id}`} className="block group">
-            <div className={cn("flex flex-col", className)}>
-                <div className="relative overflow-hidden rounded-lg bg-gray-100">
-                    <img
-                        src={book.cover_image}
-                        alt={book.title}
-                        className="aspect-[3/4] w-full object-cover transition-transform group-hover:scale-105"
-                    />
-                    <button
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute top-2 right-2 p-2 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                        <Heart className="w-4 h-4" />
-                    </button>
+        <Link to={`/book/${book.book_id}`} className="block h-full">
+            <div className={cn(
+                "flex flex-col gap-3 bg-white p-4 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 h-full",
+                className
+            )}>
+                <img
+                    src={book.cover_image}
+                    alt={book.title}
+                    className="w-full aspect-[3/4] object-cover rounded-lg"
+                />
+                <div className="flex-1 flex flex-col">
+                    <h3 className="text-gray-900 font-bold text-base truncate font-display">
+                        {book.title}
+                    </h3>
+                    <p className="text-gray-500 text-sm truncate">{book.authors}</p>
+
+                    {/* Rating Stars */}
+                    <div className="flex items-center my-1 text-yellow-500">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                                key={star}
+                                className={cn("w-4 h-4", star <= rating ? "fill-current" : "text-gray-300")}
+                                strokeWidth={0} // Fill style style giống mẫu
+                                fill={star <= rating ? "currentColor" : "none"}
+                            />
+                        ))}
+                    </div>
+
+                    <p className="text-gray-900 font-semibold text-lg mt-auto">
+                        ${book.price.toFixed(2)}
+                    </p>
                 </div>
 
-                <div className="mt-3 flex flex-col gap-1">
-                    <h3 className="font-medium text-sm line-clamp-2">{book.title}</h3>
-                    <p className="text-xs text-muted-foreground">{book.authors}</p>
-                    <p className="font-semibold">${book.price.toFixed(2)}</p>
-                </div>
-
-                <Button
+                <button
                     onClick={handleAddToCart}
-                    className="mt-3 w-full bg-purple-600 hover:bg-purple-700"
+                    className="w-full flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#00796B]/10 text-[#00796B] hover:bg-[#00796B] hover:text-white text-sm font-bold transition-colors"
                 >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to cart
-                </Button>
+                    Add to Cart
+                </button>
             </div>
         </Link>
     );

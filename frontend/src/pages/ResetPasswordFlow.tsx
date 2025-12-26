@@ -1,7 +1,9 @@
+// src/pages/ResetPasswordFlow.tsx
 import { useState } from 'react';
 import ResetRequestOTPForm from '@/components/auth/reset/ResetRequestOTPForm';
 import ResetVerifyOTPForm from '@/components/auth/reset/ResetVerifyOTPForm';
 import ResetPasswordCompleteForm from '@/components/auth/reset/ResetPasswordCompleteForm';
+import { AuthLayout } from '@/layouts/AuthLayout';
 
 export default function ResetPasswordFlow() {
     const [step, setStep] = useState<'request' | 'verify' | 'complete'>('request');
@@ -18,16 +20,17 @@ export default function ResetPasswordFlow() {
         setStep('complete');
     };
 
+    let title = "Reset Password";
+    let subtitle = "Enter your email to reset password.";
+
+    if (step === 'verify') subtitle = "Enter the code sent to your email.";
+    if (step === 'complete') subtitle = "Create your new password.";
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-            <div className="max-w-md w-full space-y-8">
-                <h2 className="text-3xl font-bold text-center">Đặt lại mật khẩu</h2>
-                <div className="bg-white p-8 rounded-xl shadow-sm border">
-                    {step === 'request' && <ResetRequestOTPForm onSuccess={handleRequestSuccess} />}
-                    {step === 'verify' && <ResetVerifyOTPForm email={email} onSuccess={handleVerifySuccess} />}
-                    {step === 'complete' && <ResetPasswordCompleteForm email={email} otp={otp} />}
-                </div>
-            </div>
-        </div>
+        <AuthLayout title={title} subtitle={subtitle} showTabs={false}>
+            {step === 'request' && <ResetRequestOTPForm onSuccess={handleRequestSuccess} />}
+            {step === 'verify' && <ResetVerifyOTPForm email={email} onSuccess={handleVerifySuccess} />}
+            {step === 'complete' && <ResetPasswordCompleteForm email={email} otp={otp} />}
+        </AuthLayout>
     );
 }
