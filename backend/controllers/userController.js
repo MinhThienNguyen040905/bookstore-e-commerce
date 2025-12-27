@@ -10,6 +10,14 @@ import 'dotenv/config';
 import { Op } from 'sequelize';
 import { ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL } from '../constants/auth.js';
 import { log } from 'console';
+// 1. THÊM CÁC IMPORT NÀY (để xử lý file và upload)
+import cloudinary from '../cloudinary.js';
+import multer from 'multer';
+import fs from 'fs';
+
+// 2. CẤU HÌNH MULTER (Lưu file tạm vào thư mục 'uploads/')
+const upload = multer({ dest: 'uploads/' });
+const uploadAvatar = upload.single('avatar'); // 'avatar' là tên key mà frontend gửi lên
 
 
 // === LOGIN ===
@@ -205,4 +213,66 @@ const resetPassword = async (req, res) => {
     }
 };
 
-export default { login, getUsers, signOut, refreshToken, requestOTP, verifyOTP, completeRegister, resetPassword };
+const updateProfile = async (req, res) => {
+    const userId = req.user.user_id;
+    // Lấy các thông tin text từ req.body
+    const { name, phone, address } = req.body;
+
+    try {
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.error('Người dùng không tồn tại', 404);
+        }
+
+        // --- XỬ LÝ ẢNH (NẾU CÓ GỬI LÊN) ---
+        if (req.file) {
+            // Upload ảnh lên Cloudinary
+            const result = await cloudinary.uploader.upload(req.file.path);
+
+            // Xóa ảnh cũ trên Cloudinary (Optional - để tiết kiệm dung lượng)
+            if (user.avatar) {
+                try {
+                    const urlParts = user.avatar.split('/');
+                    const publicId = urlParts[urlParts.length - 1].split('.')[0];
+                    await cloudinary.uploader.destroy(publicId);
+                } catch (err) {
+                    console.log('Không xóa được ảnh cũ:', err.message);
+                }
+            }
+
+            // Cập nhật URL mới vào object user
+            user.avatar = result.secure_url;
+
+            // Xóa file tạm trên server
+            fs.unlinkSync(req.file.path);
+        }
+
+        // --- CẬP NHẬT THÔNG TIN TEXT ---
+        if (name) user.name = name;
+        if (phone) user.phone = phone;
+        if (address) user.address = address;
+
+        await user.save();
+
+        res.success({
+            user_id: user.user_id,
+            name: user.name,
+            phone: user.phone,
+            address: user.address,
+            avatar: user.avatar,
+            role: user.role
+        }, 'Cập nhật thông tin thành công');
+
+    } catch (err) {
+        // Nếu lỗi, nhớ xóa file tạm nếu nó đã được tạo ra
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+        console.error('Update profile error:', err);
+        res.error('Lỗi server khi cập nhật thông tin', 500);
+    }
+};
+
+export default {
+    login, getUsers, signOut, refreshToken, requestOTP, verifyOTP, completeRegister, resetPassword, uploadAvatar, updateProfile
+};

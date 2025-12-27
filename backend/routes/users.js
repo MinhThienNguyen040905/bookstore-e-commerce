@@ -13,4 +13,6 @@ router.post('/verify-otp', userController.verifyOTP);
 router.post('/register', userController.completeRegister);
 router.post('/reset-password', userController.resetPassword);
 
+router.put('/profile', auth, userController.uploadAvatar, userController.updateProfile);
+
 export default router;
