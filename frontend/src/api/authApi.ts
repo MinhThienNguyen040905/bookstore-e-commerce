@@ -43,3 +43,10 @@ export const logout = async () => {
     const { data } = await api.post('/users/logout');
     return data;
 };
+
+// Hàm cập nhật profile (nhận FormData để xử lý cả file và text)
+export const updateProfile = async (formData: FormData) => {
+    // Lưu ý: Không cần set Content-Type thủ công, axios sẽ tự xử lý khi data là FormData
+    const { data } = await api.put('/users/profile', formData);
+    return data;
+};
