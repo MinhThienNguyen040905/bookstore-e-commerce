@@ -1,8 +1,8 @@
-import { Search, ShoppingCart, Menu, Phone, LogOut, User } from 'lucide-react';
+// src/layouts/Header.tsx
+import { Search, ShoppingCart, User, BookOpen, LogOut, UserCircle } from 'lucide-react';
 import { useCartQuery } from '@/hooks/useCartQuery';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/features/cart/useCartStore';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import {
@@ -16,87 +16,109 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export function Header() {
-    useCartQuery(); // đảm bảo cart luôn được đồng bộ
-
-    const { data: cartData } = useCartQuery(); // ← lấy data từ query
-    const itemCount = cartData?.total_items ?? 0; // ← hiện đúng số loại sách
-
+    useCartQuery();
+    const { data: cartData } = useCartQuery();
+    const itemCount = cartData?.total_items ?? 0;
     const { user, logout } = useAuth();
 
-
-    console.log('Header user:', user); // Debug
-
     return (
-        <header className="border-b bg-white">
-            <div className="container mx-auto px-4">
-                <div className="flex items-center justify-between py-2 text-sm">
-                    <div className="flex items-center gap-4">
-                        <span className="font-semibold">B-World</span>
-                        <span className="hidden sm:inline text-muted-foreground">We love books</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <Link to="/privacy" className="hidden sm:inline text-muted-foreground hover:text-foreground">Privacy</Link>
-                        <Link to="/shipping" className="hidden sm:inline text-muted-foreground hover:text-foreground">Shipping</Link>
-                        <Link to="/cart" className="flex items-center gap-1 hover:text-purple-600 transition">
-                            <ShoppingCart className="w-4 h-4" />
-                            <span className="w-5 h-5 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
-                                {itemCount}
-                            </span>
+        <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur-sm shadow-sm">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                <div className="flex items-center justify-between">
+
+                    {/* Logo Section */}
+                    <div className="flex items-center gap-8">
+                        <Link to="/" className="flex items-center gap-2 group">
+                            <BookOpen className="w-8 h-8 text-[#0df2d7]" />
+                            <h2 className="text-xl font-bold font-display tracking-tight text-[#2F4F4F] group-hover:text-[#0df2d7] transition-colors">
+                                BookStore
+                            </h2>
                         </Link>
-                    </div>
-                </div>
-                <div className="flex items-center justify-between py-4">
-                    <div className="flex items-center gap-8 flex-1">
-                        <Link to="/" className="text-2xl font-bold text-purple-600">B-World</Link>
+
+                        {/* Nav Links */}
                         <nav className="hidden md:flex items-center gap-6">
-                            <Link to="/must-read" className="hover:text-purple-600 transition">Must Read</Link>
-                            <Link to="/promotion" className="hover:text-purple-600 transition">Promotion</Link>
-                            <Link to="/newsletter" className="hover:text-purple-600 transition">Newsletter</Link>
+                            {['Home', 'Categories', 'Bestsellers', 'Blog', 'About'].map((item) => (
+                                <Link
+                                    key={item}
+                                    to="/"
+                                    className="text-sm font-medium text-gray-700 hover:text-[#0df2d7] transition-colors"
+                                >
+                                    {item}
+                                </Link>
+                            ))}
                         </nav>
                     </div>
+
+                    {/* Right Section */}
                     <div className="flex items-center gap-4">
-                        <div className="relative hidden md:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <Input
-                                placeholder="Tìm sách..."
-                                className="pl-10 w-64"
-                            />
+                        {/* Search Bar */}
+                        <div className="hidden sm:flex relative w-full max-w-xs">
+                            <div className="relative w-full">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Input
+                                    placeholder="Search books..."
+                                    className="w-64 pl-10 rounded-full border-gray-300 focus-visible:ring-[#0df2d7] focus:border-[#0df2d7]"
+                                />
+                            </div>
                         </div>
-                        {user ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                                        <Avatar className="h-10 w-10">
-                                            <AvatarImage src={user.avatar || 'https://via.placeholder.com/40'} alt={user.name} />
-                                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
+
+                        <div className="flex gap-2">
+                            {/* User Menu - ĐÃ SỬA LỖI Ở ĐÂY */}
+                            {user ? (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="relative h-10 w-10 rounded-full bg-gray-100 hover:bg-gray-200">
+                                            <Avatar className="h-9 w-9 border border-gray-200">
+                                                <AvatarImage src={user.avatar || ''} alt={user.name} />
+                                                <AvatarFallback className="font-bold text-gray-600">{user.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-56" align="end">
+                                        <DropdownMenuLabel className="font-normal">
+                                            <div className="flex flex-col space-y-1">
+                                                <p className="text-sm font-medium leading-none">{user.name}</p>
+                                                <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                                            </div>
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+
+                                        {/* SỬA LỖI: Thêm asChild và thẻ Link */}
+                                        <DropdownMenuItem asChild>
+                                            <Link to="/profile" className="cursor-pointer w-full flex items-center">
+                                                <UserCircle className="mr-2 h-4 w-4" />
+                                                <span>Profile</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuSeparator />
+
+                                        <DropdownMenuItem onClick={() => logout()} className="text-red-600 focus:text-red-600 cursor-pointer">
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            <span>Log out</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            ) : (
+                                <Link to="/login">
+                                    <Button variant="ghost" size="icon" className="rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700">
+                                        <User className="w-5 h-5" />
                                     </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56" align="end" forceMount>
-                                    <DropdownMenuLabel className="font-normal">
-                                        <div className="flex flex-col space-y-1">
-                                            <p className="text-sm font-medium leading-none">{user.name}</p>
-                                            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                                        </div>
-                                    </DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem asChild>
-                                        <Link to="/profile" className="flex items-center">
-                                            <User className="mr-2 h-4 w-4" />
-                                            Hồ sơ
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={logout} className="text-destructive">
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        Đăng xuất
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        ) : (
-                            <Button asChild>
-                                <Link to="/login">Đăng nhập</Link>
-                            </Button>
-                        )}
+                                </Link>
+                            )}
+
+                            {/* Cart */}
+                            <Link to="/cart">
+                                <Button variant="ghost" size="icon" className="relative rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700">
+                                    <ShoppingCart className="w-5 h-5" />
+                                    {itemCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 h-5 w-5 bg-[#0df2d7] text-stone-900 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white">
+                                            {itemCount}
+                                        </span>
+                                    )}
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

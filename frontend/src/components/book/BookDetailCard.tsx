@@ -1,146 +1,143 @@
-
-import { Button } from '@/components/ui/button';
-import { Star, Plus, Minus } from 'lucide-react';
-
-import type { Book } from '@/types/book';
+// src/components/book/BookDetailCard.tsx
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Star, Minus, Plus, ShoppingCart, Heart } from 'lucide-react';
+import type { Book } from '@/types/book';
 import { useAddToCart } from '@/hooks/useAddToCart';
-
+import { cn } from '@/lib/utils';
 
 export function BookDetailCard({ book }: { book: Book }) {
     const [quantity, setQuantity] = useState(1);
-
     const addMutation = useAddToCart();
+
+    // Giả lập ảnh gallery
+    const images = [book.cover_image, book.cover_image, book.cover_image, book.cover_image];
+    const [activeImage, setActiveImage] = useState(images[0]);
 
     const handleAddToCart = () => {
         addMutation.mutate({ book, quantity });
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-6">
-            <div className="grid md:grid-cols-2 gap-12">
-                {/* LEFT: Cover */}
-                <div className="relative">
-                    <div className="sticky top-8">
-                        <div className="relative group">
-                            <img
-                                src={book.cover_image}
-                                alt={book.title}
-                                className="w-full rounded-lg shadow-2xl object-cover border border-gray-200"
-                            />
-                        </div>
-                    </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
+            {/* LEFT: Image Gallery */}
+            <div className="flex flex-col gap-4">
+                {/* Main Image */}
+                <div
+                    className="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-xl shadow-md transition-transform duration-300 hover:scale-105 border border-gray-100"
+                    style={{ backgroundImage: `url("${activeImage}")` }}
+                ></div>
+
+                {/* Thumbnails */}
+                <div className="grid grid-cols-4 gap-3">
+                    {images.map((img, idx) => (
+                        <div
+                            key={idx}
+                            onClick={() => setActiveImage(img)}
+                            className={cn(
+                                "w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg cursor-pointer transition-all",
+                                activeImage === img
+                                    ? "border-2 border-[#00796B] opacity-100" // Đổi sang màu Teal
+                                    : "opacity-70 hover:opacity-100 border border-transparent"
+                            )}
+                            style={{ backgroundImage: `url("${img}")` }}
+                        ></div>
+                    ))}
+                </div>
+            </div>
+
+            {/* RIGHT: Product Details */}
+            <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-[#2F4F4F] text-4xl lg:text-5xl font-bold font-display leading-tight tracking-tight">
+                        {book.title}
+                    </h1>
+                    <p className="text-gray-600 text-lg">
+                        by <span className="text-[#00796B] font-medium hover:underline cursor-pointer">{book.authors}</span>
+                    </p>
                 </div>
 
-                {/* RIGHT: Info */}
-                <div className="space-y-8">
-                    {/* Title & Author */}
-                    <div>
-                        <h1 className="text-4xl font-bold text-gray-900 leading-tight">
-                            {book.title}
-                        </h1>
-                        <p className="text-xl text-purple-700 mt-2 font-medium">
-                            {book.authors}
-                        </p>
-                    </div>
-
-                    {/* Rating */}
-                    <div className="flex items-center gap-3">
-                        <div className="flex">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <Star
-                                    key={star}
-                                    className={cn(
-                                        "w-5 h-5",
-                                        star <= Math.floor(book.avg_rating)
-                                            ? "fill-yellow-400 text-yellow-400"
-                                            : star === Math.ceil(book.avg_rating) && book.avg_rating % 1 !== 0
-                                                ? "fill-yellow-400/50 text-yellow-400"
-                                                : "text-gray-300"
-                                    )}
-                                />
-                            ))}
-                        </div>
-                        <span className="text-lg font-medium">{book.avg_rating.toFixed(1)}</span>
-                        <span className="text-sm text-muted-foreground ml-2">
-                            ({book.reviews.length} đánh giá)
-                        </span>
-                    </div>
-
-                    {/* Price */}
-                    <div className="text-5xl font-bold text-purple-700">
-                        ${book.price.toFixed(2)}
-                    </div>
-
-                    {/* Description */}
-                    <div className="prose prose-purple max-w-none">
-                        <p className="text-gray-700 leading-relaxed">{book.description}</p>
-                    </div>
-
-                    {/* Quantity & Add to Cart */}
-                    <div className="flex items-center gap-6 py-6">
-                        <div className="flex items-center border border-gray-300 rounded-lg">
-                            <button
-                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                className="p-3 hover:bg-gray-100 transition"
-                            >
-                                <Minus className="w-4 h-4" />
-                            </button>
-                            <span className="px-6 font-medium text-lg">{quantity}</span>
-                            <button
-                                onClick={() => setQuantity(quantity + 1)}
-                                className="p-3 hover:bg-gray-100 transition"
-                            >
-                                <Plus className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        <Button
-                            onClick={handleAddToCart}
-                            size="lg"
-                            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-lg py-7"
-                        >
-                            Add to cart
-                        </Button>
-                    </div>
-
-                    <hr className="border-gray-200" />
-
-                    {/* Book Details */}
-                    <div className="grid grid-cols-2 gap-6 text-sm">
-                        <div>
-                            <span className="text-purple-600 font-medium">Publisher:</span>
-                            <span className="ml-2 text-gray-700">{book.publisher}</span>
-                        </div>
-                        <div>
-                            <span className="text-purple-600 font-medium">Release date:</span>
-                            <span className="ml-2 text-gray-700">
-                                {new Date(book.release_date).toLocaleDateString('vi-VN')}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-purple-600 font-medium">ISBN:</span>
-                            <span className="ml-2 text-gray-700">{book.isbn}</span>
-                        </div>
-                        <div>
-                            <span className="text-purple-600 font-medium">In stock:</span>
-                            <span className="ml-2 text-gray-700">{book.stock} cuốn</span>
-                        </div>
-                    </div>
-
-                    {/* Genres */}
-                    <div className="flex flex-wrap gap-2 mt-4">
-                        {book.genres.map((g) => (
-                            <span
-                                key={g.genre_id}
-                                className="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full"
-                            >
-                                {g.name}
-                            </span>
+                {/* Rating */}
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center text-amber-400">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                                key={star}
+                                className={cn("w-5 h-5", star <= book.avg_rating ? "fill-current" : "text-gray-300")}
+                                fill={star <= book.avg_rating ? "currentColor" : "none"}
+                                strokeWidth={0}
+                            />
                         ))}
                     </div>
+                    <a href="#reviews" className="text-slate-500 text-sm hover:text-[#00796B] underline-offset-4 hover:underline">
+                        ({book.reviews.length} reviews)
+                    </a>
                 </div>
+
+                {/* Price */}
+                <div className="flex items-baseline gap-3">
+                    <span className="text-[#2F4F4F] text-4xl font-bold font-display">
+                        ${book.price.toFixed(2)}
+                    </span>
+                    <span className="text-red-400 text-xl line-through">
+                        ${(book.price * 1.2).toFixed(2)}
+                    </span>
+                </div>
+
+                <p className="text-slate-600 leading-relaxed text-base">
+                    {book.description}
+                </p>
+
+                {/* Metadata */}
+                <ul className="text-slate-600 space-y-2 text-sm">
+                    <li className="flex gap-2"><strong className="font-medium text-[#2F4F4F] w-32">ISBN:</strong> {book.isbn}</li>
+                    <li className="flex gap-2"><strong className="font-medium text-[#2F4F4F] w-32">Stock:</strong> {book.stock} available</li>
+                    <li className="flex gap-2"><strong className="font-medium text-[#2F4F4F] w-32">Publisher:</strong> {book.publisher}</li>
+                    <li className="flex gap-2"><strong className="font-medium text-[#2F4F4F] w-32">Publication Date:</strong> {new Date(book.release_date).toLocaleDateString()}</li>
+                </ul>
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-200">
+                    {/* Quantity */}
+                    <div className="flex items-center border border-slate-300 rounded-lg h-12">
+                        <button
+                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            className="px-4 text-slate-500 hover:text-[#00796B] h-full"
+                        >
+                            <Minus className="w-4 h-4" />
+                        </button>
+                        <input
+                            className="w-12 text-center bg-transparent border-x border-slate-300 text-[#2F4F4F] font-medium h-full focus:outline-none"
+                            type="text"
+                            value={quantity}
+                            readOnly
+                        />
+                        <button
+                            onClick={() => setQuantity(quantity + 1)}
+                            className="px-4 text-slate-500 hover:text-[#00796B] h-full"
+                        >
+                            <Plus className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* Add to Cart */}
+                    <Button
+                        onClick={handleAddToCart}
+                        className="w-full flex-1 flex items-center justify-center gap-2 rounded-lg h-12 px-6 bg-[#00796B] hover:bg-[#00695C] text-white font-bold text-base shadow-sm border-none"
+                    >
+                        <ShoppingCart className="w-5 h-5" />
+                        Add to Cart
+                    </Button>
+
+                    {/* Wishlist */}
+                    <button className="w-full sm:w-auto flex items-center justify-center rounded-lg h-12 px-4 border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#00796B] transition-colors">
+                        <Heart className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <Button className="w-full flex items-center justify-center gap-2 rounded-lg h-12 px-6 bg-[#00796B]/10 hover:bg-[#00796B]/20 text-[#00796B] font-bold border-none shadow-none">
+                    Buy Now
+                </Button>
             </div>
         </div>
     );

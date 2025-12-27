@@ -7,6 +7,7 @@ import ResetPasswordFlow from '@/pages/ResetPasswordFlow';
 import CartPage from '@/pages/CartPage';
 import PaymentPage from '@/pages/PaymentPage';
 import OrderSuccessPage from '@/pages/OrderSuccessPage';
+import ProfilePage from '@/pages/ProfilePage';
 
 export const routes: RouteObject[] = [
     { path: '/', element: <Home /> },
@@ -17,4 +18,5 @@ export const routes: RouteObject[] = [
     { path: '/cart', element: <CartPage /> },
     { path: '/checkout', element: <PaymentPage /> },
     { path: '/order-success', element: <OrderSuccessPage /> },
+    { path: '/profile', element: <ProfilePage /> }
 ];

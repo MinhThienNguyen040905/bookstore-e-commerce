@@ -41,31 +41,24 @@ export default function CompleteRegisterForm({ email }: { email: string }) {
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <p className="text-sm text-center text-muted-foreground">
-                Hoàn tất đăng ký cho <strong>{email}</strong>
-            </p>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
-                <Label htmlFor="name">Họ tên</Label>
-                <Input id="name" type="text" placeholder="Nguyễn Văn A" {...register('name')} />
-                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                <Label htmlFor="name" className="text-stone-600 font-medium">Full Name</Label>
+                <Input id="name" {...register('name')} className="h-12 border-stone-300 focus:border-[#0df2d7] focus:ring-[#0df2d7] rounded-lg" placeholder="Jane Doe" />
+                {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
             </div>
             <div className="space-y-2">
-                <Label htmlFor="password">Mật khẩu</Label>
-                <Input id="password" type="password" placeholder="••••••••" {...register('password')} />
-                {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+                <Label htmlFor="password" classname="text-stone-600 font-medium">Password</Label>
+                <Input id="password" type="password" {...register('password')} className="h-12 border-stone-300 focus:border-[#0df2d7] focus:ring-[#0df2d7] rounded-lg" placeholder="Create a password" />
+                {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
             </div>
             <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
-                <Input id="confirmPassword" type="password" placeholder="••••••••" {...register('confirmPassword')} />
-                {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+                <Label htmlFor="confirmPassword" classname="text-stone-600 font-medium">Confirm Password</Label>
+                <Input id="confirmPassword" type="password" {...register('confirmPassword')} className="h-12 border-stone-300 focus:border-[#0df2d7] focus:ring-[#0df2d7] rounded-lg" placeholder="Confirm password" />
+                {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
             </div>
-            <Button
-                type="submit"
-                className="w-full bg-purple-600 hover:bg-purple-700"
-                disabled={isSubmitting}
-            >
-                {isSubmitting ? 'Đang xử lý...' : 'Hoàn tất đăng ký'}
+            <Button type="submit" className="w-full h-12 bg-[#0df2d7] hover:bg-[#00dcc3] text-stone-900 font-bold text-base rounded-lg" disabled={isSubmitting}>
+                {isSubmitting ? 'Processing...' : 'Complete Registration'}
             </Button>
         </form>
     );

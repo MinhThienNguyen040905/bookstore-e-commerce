@@ -393,6 +393,7 @@ const createOrder = async (req, res) => {
             return res.error('Giỏ hàng trống', 400);
         }
 
+        // Kiểm tra và lock stock để tránh race condition
         let total_price = 0;
         for (const item of cartItems) {
             const book = await Book.findByPk(item.book_id, {
@@ -676,12 +677,12 @@ const buildStatusHistory = (status, orderDate) => {
 <<<<<<< Updated upstream
     // Find current step index
     const currentIndex = TIMELINE_STEPS.findIndex(step => step.status === currentStatus);
-    
+
     // Build timeline: show all steps up to current status
     return TIMELINE_STEPS.map((step, index) => {
         const estimatedDate = new Date(baseDate);
         estimatedDate.setDate(estimatedDate.getDate() + (STATUS_OFFSETS_DAYS[step.status] || 0));
-        
+
 =======
     const currentIndex = TIMELINE_STEPS.findIndex((step) => step.status === status);
     const steps = currentIndex >= 0 ? TIMELINE_STEPS.slice(0, currentIndex + 1) : TIMELINE_STEPS;
