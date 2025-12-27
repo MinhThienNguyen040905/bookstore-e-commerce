@@ -243,6 +243,51 @@ GET /api/orders
 Headers: Authorization: Bearer {access_token}
 ```
 
+> 📌 **Lưu ý**: Nếu frontend cần timeline trạng thái cho từng đơn, dùng endpoint `GET /api/orders/my-orders` thay vì `GET /api/orders`.
+
+#### Get My Orders (Timeline)
+```
+GET /api/orders/my-orders
+Headers: Authorization: Bearer {access_token}
+```
+
+**Response đặc biệt**:
+- `status_history`: mảng chuỗi bước (`processing` → `shipped` → `delivered`). Mỗi phần tử gồm:
+  - `status`: trạng thái hiện tại.
+  - `title`, `description`: nội dung hiển thị trên timeline.
+  - `completedAt`: ngày ước tính/đã hoàn thành (dựa trên `order_date` + offset).
+  - `isCompleted`: `true` nếu bước đã hoàn thành (bao gồm bước của `order.status` hiện tại).
+- Nếu đơn đã hủy (`status = cancelled`), mảng chỉ chứa một bước hủy riêng (`title`: "Đơn hàng đã bị hủy").
+
+Ví dụ:
+```json
+{
+  "status_history": [
+    {
+      "status": "processing",
+      "title": "Đang xử lý",
+      "description": "Đơn hàng đang được xác nhận",
+      "completedAt": "2025-12-20T05:00:00.000Z",
+      "isCompleted": true
+    },
+    {
+      "status": "shipped",
+      "title": "Đang vận chuyển",
+      "description": "Đơn hàng đang được giao",
+      "completedAt": "2025-12-22T05:00:00.000Z",
+      "isCompleted": true
+    },
+    {
+      "status": "delivered",
+      "title": "Đã giao hàng",
+      "description": "Đơn hàng đã đến tay bạn",
+      "completedAt": "2025-12-24T05:00:00.000Z",
+      "isCompleted": false
+    }
+  ]
+}
+```
+
 #### Get All Orders (Admin Only)
 ```
 GET /api/orders/all
@@ -436,4 +481,8 @@ Tất cả errors đều trả về format:
 ---
 
 **Last Updated**: 2025-12-19
+
+
+
+
 
