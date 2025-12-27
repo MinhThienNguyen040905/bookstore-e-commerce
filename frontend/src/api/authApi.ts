@@ -46,7 +46,11 @@ export const logout = async () => {
 
 // Hàm cập nhật profile (nhận FormData để xử lý cả file và text)
 export const updateProfile = async (formData: FormData) => {
-    // Lưu ý: Không cần set Content-Type thủ công, axios sẽ tự xử lý khi data là FormData
-    const { data } = await api.put('/users/profile', formData);
+    // QUAN TRỌNG: Phải set header là multipart/form-data để override cái application/json mặc định
+    const { data } = await api.put('/users/profile', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
     return data;
 };
