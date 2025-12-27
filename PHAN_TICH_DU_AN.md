@@ -33,11 +33,19 @@
 - **Form Handling**: React Hook Form + Zod validation
 - **Notifications**: Sonner (toast notifications)
 
-### 1.3. Cập nhật gần nhất (commit ~19h trước: `32ce194` – add-to-cart quantity)
-- `useAddToCart` nhận `{ book, quantity }`, gửi quantity xuống API, optimistic update dùng đúng số lượng truyền vào.
-- `useCartStore.addToCart` hỗ trợ quantity tùy chọn; nếu đã có item thì cộng thêm quantity, nếu chưa có thì thêm mới với quantity khởi tạo.
-- `BookCard` gọi `addToCart` với `{ book, quantity: 1 }`; `BookDetailCard` gọi với quantity người dùng chọn.
-- `onError` trong `useAddToCart` hiện chỉ hiển thị toast, không rollback optimistic update (cần cân nhắc nếu muốn khôi phục state khi API lỗi).
+### 1.3. Cập nhật gần nhất (commit `6ed96c6` – Advanced Search & Wishlist)
+- ✅ **Enhanced Book Search & Filter**: Nâng cấp `getBooks` với 2-step query strategy để fix lỗi mất Authors/Genres khi GROUP BY
+  - Hỗ trợ filter: keyword, min_price, max_price, genre (IDs hoặc names), rating (average >= value)
+  - Hỗ trợ sort: price-asc, price-desc, newest, top-rated
+  - Pagination với page và limit
+  - Trả về avg_rating cho mỗi sách
+- ✅ **Wishlist Feature**: Hoàn thiện Module 2
+  - Model Wishlist với unique constraint (user_id, book_id)
+  - API toggleWishlist (thêm/xóa sách)
+  - API getWishlist (lấy danh sách yêu thích)
+  - Routes và associations đã đăng ký
+  - Migration đã chạy thành công
+- ✅ **Migration Fixes**: Sửa lỗi duplicate index trong sessions-table migrations
 
 ### 1.4. Cấu trúc thư mục
 
@@ -133,6 +141,12 @@ bookstore-e-commerce/
 **OtpTemp (OTP tạm thời)**
 - Lưu OTP cho đăng ký và reset password
 
+**Wishlist (Danh sách yêu thích)**
+- `wishlist_id` (PK)
+- `user_id` (FK → User)
+- `book_id` (FK → Book)
+- Unique constraint: (user_id, book_id) — đảm bảo 1 user không thêm trùng sách vào wishlist
+
 ### 2.2. Quan hệ giữa các bảng
 
 - User ↔ CartItem (1:N)
@@ -144,9 +158,11 @@ bookstore-e-commerce/
 - Book ↔ Author (N:N qua BookAuthor)
 - Book ↔ Genre (N:N qua BookGenre)
 - Book ↔ Publisher (N:1)
+- Book ↔ Wishlist (1:N)
 - Order ↔ OrderItem (1:N)
 - Order ↔ PromoCode (N:1, nullable)
 - Order ↔ User (N:1)
+- User ↔ Wishlist (1:N)
 
 ---
 
@@ -176,9 +192,14 @@ bookstore-e-commerce/
 **Backend:**
 - ✅ CRUD sách (Create chỉ dành cho admin)
 - ✅ Upload ảnh bìa lên Cloudinary
-- ✅ Tìm kiếm sách theo title, author, genre
-- ✅ Lọc theo giá (min_price, max_price)
-- ✅ Sắp xếp (sort)
+- ✅ **Advanced Search & Filter** (Enhanced):
+  - Tìm kiếm theo keyword (title)
+  - Lọc theo giá (min_price, max_price)
+  - Lọc theo genre (hỗ trợ IDs hoặc names, nhiều genre)
+  - Lọc theo rating (average rating >= value, tính từ Reviews)
+  - Sắp xếp: price-asc, price-desc, newest, top-rated
+  - Pagination với page và limit
+  - 2-step query strategy để tránh mất Authors/Genres khi GROUP BY
 - ✅ Lấy sách mới phát hành (`/new-releases`)
 - ✅ Lấy sách đánh giá cao (`/top-rated`)
 - ✅ Lấy chi tiết sách với reviews, authors, genres
@@ -256,7 +277,35 @@ bookstore-e-commerce/
 - ✅ Kiểm tra và áp dụng mã
 - ✅ Hiển thị giá sau khi giảm
 
-### 3.7. UI/UX Components ✅
+### 3.7. Wishlist / Favorites ✅
+
+**Backend:**
+- ✅ Model Wishlist với unique constraint (user_id, book_id)
+- ✅ API toggleWishlist: Thêm/xóa sách khỏi wishlist (1 endpoint làm 2 việc)
+- ✅ API getWishlist: Lấy danh sách yêu thích với thông tin sách đầy đủ
+- ✅ Routes đã đăng ký: `/api/wishlist/toggle`, `/api/wishlist`
+- ✅ Associations: User ↔ Wishlist, Book ↔ Wishlist
+- ✅ Migration đã chạy thành công
+
+**Frontend:**
+- ❌ Trang wishlist của user (chưa có)
+- ❌ Nút "Yêu thích" trên BookCard (chưa có)
+
+### 3.7. Wishlist / Favorites ✅
+
+**Backend:**
+- ✅ Model Wishlist với unique constraint (user_id, book_id)
+- ✅ API toggleWishlist: Thêm/xóa sách khỏi wishlist (1 endpoint làm 2 việc)
+- ✅ API getWishlist: Lấy danh sách yêu thích với thông tin sách đầy đủ
+- ✅ Routes đã đăng ký: `/api/wishlist/toggle`, `/api/wishlist`
+- ✅ Associations: User ↔ Wishlist, Book ↔ Wishlist
+- ✅ Migration đã chạy thành công
+
+**Frontend:**
+- ❌ Trang wishlist của user (chưa có)
+- ❌ Nút "Yêu thích" trên BookCard (chưa có)
+
+### 3.8. UI/UX Components ✅
 
 **Components đã có:**
 - ✅ Header với navigation
@@ -303,17 +352,19 @@ bookstore-e-commerce/
 - ❌ Xem lịch sử đơn hàng
 - ❌ Chi tiết đơn hàng
 
-### 4.3. Tìm kiếm & Lọc nâng cao ❌
+### 4.3. Tìm kiếm & Lọc nâng cao ⚠️
 
-**Hiện tại:**
-- Backend có search cơ bản (title, author, genre, price)
-- Frontend chưa có trang search/filter
+**Backend:** ✅ **ĐÃ HOÀN THÀNH**
+- ✅ Advanced search với keyword, price range, genre, rating filters
+- ✅ Multiple sort options (price-asc/desc, newest, top-rated)
+- ✅ Pagination với page và limit
+- ✅ 2-step query strategy để fix lỗi GROUP BY
 
-**Cần xây dựng:**
+**Frontend:** ❌ **CHƯA CÓ UI**
 - ❌ Trang tìm kiếm với search bar
 - ❌ Filter sidebar (theo genre, author, price range, rating)
-- ❌ Pagination cho danh sách sách
-- ❌ Sort options (giá, ngày phát hành, đánh giá)
+- ❌ Pagination UI cho danh sách sách
+- ❌ Sort dropdown/buttons
 
 ### 4.4. Payment Gateway Integration ❌
 
@@ -346,13 +397,19 @@ bookstore-e-commerce/
 - ❌ Hiển thị timeline trạng thái đơn hàng
 - ❌ Thông tin vận chuyển (nếu có)
 
-### 4.7. Wishlist / Favorites ❌
+### 4.7. Wishlist / Favorites ⚠️
 
-**Cần xây dựng:**
-- ❌ Model Wishlist
-- ❌ API thêm/xóa khỏi wishlist
+**Backend:** ✅ **ĐÃ HOÀN THÀNH**
+- ✅ Model Wishlist với unique constraint
+- ✅ API toggleWishlist (thêm/xóa sách)
+- ✅ API getWishlist (lấy danh sách yêu thích)
+- ✅ Routes và associations đã đăng ký
+- ✅ Migration đã chạy thành công
+
+**Frontend:** ❌ **CHƯA CÓ UI**
 - ❌ Trang wishlist của user
 - ❌ Nút "Yêu thích" trên BookCard
+- ❌ Hiển thị trạng thái wishlist (đã thích/chưa thích)
 
 ### 4.8. Reviews Enhancement ❌
 
@@ -417,21 +474,24 @@ bookstore-e-commerce/
 1. **Thiếu Admin Dashboard**: Backend có API nhưng frontend chưa có UI
 2. **Payment chưa tích hợp thực tế**: Chỉ lưu phương thức, không gọi cổng thanh toán
 3. **Thiếu User Profile**: Chưa có trang quản lý thông tin cá nhân
-4. **Thiếu Search/Filter UI**: Backend có nhưng frontend chưa có
-5. **Thiếu Testing**: Không có test nào
-6. **Thiếu Documentation**: Không có API documentation
-7. **Error handling & Validation**: Cần cải thiện validation ở backend và message rõ ràng hơn
+4. **Thiếu Search/Filter UI**: Backend đã hoàn chỉnh nhưng frontend chưa có UI
+5. **Thiếu Wishlist UI**: Backend đã hoàn chỉnh nhưng frontend chưa có UI
+6. **Thiếu Testing**: Không có test nào
+7. **Documentation**: Đã có API_DOCUMENTATION.md cho Module 2, cần mở rộng
+8. **Error handling & Validation**: Cần cải thiện validation ở backend và message rõ ràng hơn
 
 ### 5.3. Mức độ hoàn thiện
 
-**Ước tính: ~60-65%**
+**Ước tính: ~65-70%** (tăng từ 60-65% do hoàn thành Module 2)
 
-- ✅ Core features (Auth, Books, Cart, Orders): **80%**
+- ✅ Core features (Auth, Books, Cart, Orders): **85%** (tăng từ 80%)
+- ✅ Advanced Search & Filter: **100%** (Backend hoàn chỉnh, Frontend chưa có)
+- ✅ Wishlist: **50%** (Backend hoàn chỉnh, Frontend chưa có)
 - ✅ UI/UX cơ bản: **70%**
 - ❌ Admin features: **20%** (chỉ có backend)
 - ❌ Payment integration: **30%** (chỉ có UI)
-- ❌ Advanced features: **0%** (Wishlist, Tracking, etc.)
-- ❌ Testing & Documentation: **0%**
+- ❌ Advanced features khác: **0%** (Tracking, etc.)
+- ⚠️ Testing & Documentation: **10%** (có API_DOCUMENTATION.md)
 
 ---
 
@@ -467,11 +527,12 @@ bookstore-e-commerce/
 **Phase 1: Hoàn thiện Core Features (2-3 tuần)**
 1. Admin Dashboard (quản lý sách, đơn hàng, users)
 2. User Profile & Order History
-3. Search & Filter UI
-4. Payment Gateway Integration (ít nhất 1 phương thức)
+3. **Search & Filter UI** (Backend đã xong, cần Frontend)
+4. **Wishlist UI** (Backend đã xong, cần Frontend)
+5. Payment Gateway Integration (ít nhất 1 phương thức)
 
 **Phase 2: Advanced Features (2-3 tuần)**
-1. Wishlist
+1. ~~Wishlist~~ ✅ (Backend done, Frontend pending)
 2. Order Tracking
 3. Email Notifications
 4. Reviews Enhancement
@@ -488,10 +549,12 @@ bookstore-e-commerce/
 
 ### Backend:
 - `backend/server.js` - Entry point
-- `backend/models/associations.js` - Database relationships
-- `backend/controllers/` - Business logic
-- `backend/routes/` - API endpoints
+- `backend/models/associations.js` - Database relationships (đã có Wishlist)
+- `backend/controllers/bookController.js` - Enhanced getBooks với 2-step strategy
+- `backend/controllers/wishlistController.js` - Wishlist toggle và get
+- `backend/routes/` - API endpoints (đã có wishlist routes)
 - `backend/middleware/auth.js` - Authentication
+- `backend/API_DOCUMENTATION.md` - API documentation cho Module 2
 
 ### Frontend:
 - `frontend/src/routes/index.tsx` - Route definitions

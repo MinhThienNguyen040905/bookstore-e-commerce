@@ -12,6 +12,7 @@ import PromoCode from './PromoCode.js';
 import Session from './Session.js';
 import BookAuthor from './BookAuthor.js';
 import BookGenre from './BookGenre.js';
+import Wishlist from './Wishlist.js';
 
 // 1. User ↔ CartItem
 User.hasMany(CartItem, { foreignKey: 'user_id', onDelete: 'CASCADE' });
@@ -80,6 +81,14 @@ Genre.belongsToMany(Book, {
     otherKey: 'book_id',
     onDelete: 'CASCADE'
 });
+
+// 13. User ↔ Wishlist
+User.hasMany(Wishlist, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+Wishlist.belongsTo(User, { foreignKey: 'user_id' });
+
+// 14. Book ↔ Wishlist
+Book.hasMany(Wishlist, { foreignKey: 'book_id', onDelete: 'CASCADE' });
+Wishlist.belongsTo(Book, { foreignKey: 'book_id' });
 
 console.log('Tất cả quan hệ đã được thiết lập!');
 
