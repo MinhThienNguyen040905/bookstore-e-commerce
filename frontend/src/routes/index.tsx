@@ -8,6 +8,7 @@ import CartPage from '@/pages/CartPage';
 import PaymentPage from '@/pages/PaymentPage';
 import OrderSuccessPage from '@/pages/OrderSuccessPage';
 import ProfilePage from '@/pages/ProfilePage';
+import AdminPage from '@/pages/AdminPage'; // Import trang admin
 
 export const routes: RouteObject[] = [
     { path: '/', element: <Home /> },
@@ -18,5 +19,6 @@ export const routes: RouteObject[] = [
     { path: '/cart', element: <CartPage /> },
     { path: '/checkout', element: <PaymentPage /> },
     { path: '/order-success', element: <OrderSuccessPage /> },
-    { path: '/profile', element: <ProfilePage /> }
+    { path: '/profile', element: <ProfilePage /> },
+    { path: '/admin', element: <AdminPage /> }, // Thêm route admin
 ];

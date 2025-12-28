@@ -1,5 +1,5 @@
 // src/layouts/Header.tsx
-import { Search, ShoppingCart, User, BookOpen, LogOut, UserCircle } from 'lucide-react';
+import { Search, ShoppingCart, User, BookOpen, LogOut, UserCircle, LayoutDashboard } from 'lucide-react'; // Thêm icon LayoutDashboard
 import { useCartQuery } from '@/hooks/useCartQuery';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -56,10 +56,10 @@ export function Header() {
                             <div className="relative w-full">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <Input
-                                    type="search"           // 1. Khai báo rõ loại là search
-                                    name="search"           // 2. Đặt tên cụ thể
-                                    id="search-bar"         // 3. ID cụ thể
-                                    autoComplete="off"      // 4. Tắt tự động điền
+                                    type="search"
+                                    name="search"
+                                    id="search-bar"
+                                    autoComplete="off"
                                     placeholder="Search books..."
                                     className="w-64 pl-10 rounded-full border-gray-300 focus-visible:ring-[#0df2d7] focus:border-[#0df2d7]"
                                 />
@@ -67,7 +67,6 @@ export function Header() {
                         </div>
 
                         <div className="flex gap-2">
-                            {/* User Menu - ĐÃ SỬA LỖI Ở ĐÂY */}
                             {user ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -87,7 +86,16 @@ export function Header() {
                                         </DropdownMenuLabel>
                                         <DropdownMenuSeparator />
 
-                                        {/* SỬA LỖI: Thêm asChild và thẻ Link */}
+                                        {/* MENU ITEM CHO ADMIN */}
+                                        {user.role === 'admin' && (
+                                            <DropdownMenuItem asChild>
+                                                <Link to="/admin" className="cursor-pointer w-full flex items-center text-[#00796B] font-medium">
+                                                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                                                    <span>Admin Dashboard</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        )}
+
                                         <DropdownMenuItem asChild>
                                             <Link to="/profile" className="cursor-pointer w-full flex items-center">
                                                 <UserCircle className="mr-2 h-4 w-4" />
