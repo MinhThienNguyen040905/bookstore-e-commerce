@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { login, logout, updateProfile } from '@/api/authApi';
+import { login, logout, updateProfile, changePassword } from '@/api/authApi';
 import { useAuthStore } from '@/features/auth/useAuthStore';
 import { showToast } from '@/lib/toast';
 
@@ -66,6 +66,22 @@ export const useAuth = () => {
         },
     });
 
+    // Mutation Đổi mật khẩu
+    const changePasswordMutation = useMutation({
+        mutationFn: changePassword,
+        onMutate: () => {
+            return { toastId: showToast.loading('Đang đổi mật khẩu...') };
+        },
+        onSuccess: (data, variables, context) => {
+            showToast.dismiss(context?.toastId);
+            showToast.success('Đổi mật khẩu thành công!');
+        },
+        onError: (err: any, variables, context) => {
+            showToast.dismiss(context?.toastId);
+            showToast.error(err.response?.data?.message || 'Đổi mật khẩu thất bại');
+        },
+    });
+
     return {
         login: loginMutation.mutate,
         logout: logoutMutation.mutate,
@@ -74,5 +90,8 @@ export const useAuth = () => {
         user, // Trả về user từ store
         updateProfile: updateProfileMutation.mutate,
         isUpdating: updateProfileMutation.isPending,
+
+        changePassword: changePasswordMutation.mutateAsync, // Dùng mutateAsync để xử lý await ở UI
+        isChangingPassword: changePasswordMutation.isPending,
     };
 };

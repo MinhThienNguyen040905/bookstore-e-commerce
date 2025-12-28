@@ -54,3 +54,8 @@ export const updateProfile = async (formData: FormData) => {
     });
     return data;
 };
+
+export const changePassword = async (data: { oldPassword: string; newPassword: string }) => {
+    const { data: response } = await api.put('/users/change-password', data);
+    return response;
+};

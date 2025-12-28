@@ -273,6 +273,48 @@ const updateProfile = async (req, res) => {
     }
 };
 
+// === ĐỔI MẬT KHẨU ===
+const changePassword = async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user.user_id;
+
+    try {
+        // 1. Validate dữ liệu đầu vào
+        if (!oldPassword || !newPassword) {
+            return res.error('Vui lòng nhập mật khẩu cũ và mật khẩu mới', 400);
+        }
+
+        if (newPassword.length < 6) {
+            return res.error('Mật khẩu mới phải có ít nhất 6 ký tự', 400);
+        }
+
+        // 2. Tìm user trong DB
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.error('Người dùng không tồn tại', 404);
+        }
+
+        // 3. Kiểm tra mật khẩu cũ có đúng không
+        const isMatch = await user.validPassword(oldPassword); // Hàm này đã có sẵn trong User model
+        if (!isMatch) {
+            return res.error('Mật khẩu cũ không chính xác', 400);
+        }
+
+        // 4. Mã hóa mật khẩu mới và lưu lại
+        // Lưu ý: User model chỉ có hook beforeCreate, không có beforeUpdate nên phải hash thủ công ở đây
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+
+        await user.save();
+
+        res.success(null, 'Đổi mật khẩu thành công');
+
+    } catch (err) {
+        console.error('Change password error:', err);
+        res.error('Lỗi server khi đổi mật khẩu', 500);
+    }
+};
+
 export default {
-    login, getUsers, signOut, refreshToken, requestOTP, verifyOTP, completeRegister, resetPassword, uploadAvatar, updateProfile
+    login, getUsers, signOut, refreshToken, requestOTP, verifyOTP, completeRegister, resetPassword, uploadAvatar, updateProfile, changePassword
 };
