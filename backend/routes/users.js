@@ -19,4 +19,6 @@ router.put('/profile', auth, userController.uploadAvatar, userController.updateP
 // Yêu cầu phải đăng nhập (auth)
 router.put('/change-password', auth, userController.changePassword);
 
+router.delete('/delete', auth, userController.deleteUser);
+
 export default router;

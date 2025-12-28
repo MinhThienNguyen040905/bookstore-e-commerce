@@ -315,6 +315,60 @@ const changePassword = async (req, res) => {
     }
 };
 
+// === XÓA NGƯỜI DÙNG (Dùng Body) ===
+const deleteUser = async (req, res) => {
+    // 1. LẤY ID TỪ BODY
+    const { id } = req.body;
+    const requesterId = req.user.user_id; // ID người đang gọi API
+    const requesterRole = req.user.role;
+
+    try {
+        // Validation: Kiểm tra xem có gửi ID lên không
+        if (!id) {
+            return res.error('Vui lòng cung cấp ID người dùng cần xóa', 400);
+        }
+
+        if (isNaN(id)) {
+            return res.error('ID người dùng không hợp lệ', 400);
+        }
+
+        const targetUserId = parseInt(id);
+
+        // 2. KIỂM TRA QUYỀN HẠN
+        // Chỉ Admin hoặc Chính chủ mới được xóa
+        if (requesterRole !== 'admin' && requesterId !== targetUserId) {
+            return res.error('Bạn không có quyền xóa tài khoản này', 403);
+        }
+
+        // 3. Tìm user trong DB
+        const user = await User.findByPk(targetUserId);
+        if (!user) {
+            return res.error('Người dùng không tồn tại', 404);
+        }
+
+        // 4. Xóa Avatar trên Cloudinary (nếu có)
+        if (user.avatar) {
+            try {
+                const urlParts = user.avatar.split('/');
+                const publicId = urlParts[urlParts.length - 1].split('.')[0];
+                await cloudinary.uploader.destroy(publicId);
+            } catch (err) {
+                console.log('Lỗi xóa ảnh Cloudinary:', err.message);
+            }
+        }
+
+        // 5. Xóa trong DB
+        await user.destroy();
+
+        res.success({ deleted_id: targetUserId }, 'Xóa người dùng thành công');
+
+    } catch (err) {
+        console.error('Delete user error:', err);
+        res.error('Lỗi server khi xóa người dùng', 500);
+    }
+};
+
 export default {
-    login, getUsers, signOut, refreshToken, requestOTP, verifyOTP, completeRegister, resetPassword, uploadAvatar, updateProfile, changePassword
+    login, getUsers, signOut, refreshToken, requestOTP, verifyOTP, completeRegister, resetPassword, uploadAvatar, updateProfile, changePassword,
+    deleteUser
 };
