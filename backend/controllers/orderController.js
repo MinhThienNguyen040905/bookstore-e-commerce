@@ -281,9 +281,8 @@ const getAllOrders = async (req, res) => {
 };
 
 const updateOrderStatus = async (req, res) => {
-    const { order_id } = req.params;
-    const { status } = req.body;
 
+    const { order_id, status } = req.body;
     if (!ORDER_STATUS_LIST.includes(status)) {
         return res.error('Trạng thái không hợp lệ', 400);
     }
@@ -302,4 +301,62 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
-export default { createOrder, getOrders, getMyOrders, getAllOrders, updateOrderStatus };
+// === NGƯỜI DÙNG TỰ HỦY ĐƠN (Lấy ID từ Body) ===
+const cancelOrder = async (req, res) => {
+    // 1. LẤY order_id TỪ BODY
+    const { order_id } = req.body;
+    const userId = req.user.user_id;
+
+    // Validate sơ bộ
+    if (!order_id) {
+        return res.error('Vui lòng cung cấp mã đơn hàng (order_id)', 400);
+    }
+
+    const transaction = await sequelize.transaction();
+
+    try {
+        // 2. Tìm đơn hàng
+        const order = await Order.findOne({
+            where: {
+                order_id: order_id,
+                user_id: userId // Chỉ tìm đơn của chính user này
+            },
+            include: [{ model: OrderItem }],
+            transaction
+        });
+
+        if (!order) {
+            await transaction.rollback();
+            return res.error('Đơn hàng không tồn tại hoặc không thuộc về bạn', 404);
+        }
+
+        // 3. Kiểm tra điều kiện trạng thái
+        if (order.status !== ORDER_STATUS.PROCESSING) {
+            await transaction.rollback();
+            return res.error('Chỉ có thể hủy đơn hàng khi đang xử lý.', 400);
+        }
+
+        // 4. Cập nhật trạng thái
+        order.status = ORDER_STATUS.CANCELLED;
+        await order.save({ transaction });
+
+        // 5. Hoàn kho
+        for (const item of order.OrderItems) {
+            await Book.increment('stock', {
+                by: item.quantity,
+                where: { book_id: item.book_id },
+                transaction
+            });
+        }
+
+        await transaction.commit();
+        res.success({ order_id: order.order_id }, 'Hủy đơn hàng thành công');
+
+    } catch (err) {
+        if (!transaction.finished) await transaction.rollback();
+        console.error('Lỗi hủy đơn:', err);
+        res.error('Lỗi server', 500);
+    }
+};
+
+export default { createOrder, getOrders, getMyOrders, getAllOrders, updateOrderStatus, cancelOrder };
