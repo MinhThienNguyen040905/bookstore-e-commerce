@@ -57,3 +57,9 @@ export const getMyOrders = async (): Promise<Order[]> => {
     const { data } = await api.get('/orders/my-orders');
     return data; // Backend trả về data: [Order...]
 };
+
+// Thêm hàm hủy đơn hàng
+export const cancelOrderApi = async (order_id: number) => {
+    const { data } = await api.put('/orders/cancel', { order_id });
+    return data;
+};
