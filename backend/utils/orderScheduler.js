@@ -11,7 +11,7 @@ const DAYS_TO_DELIVER = 4;   // Sau 4 ngày -> Delivered
 const runOrderScheduler = () => {
     // Lên lịch: Chạy mỗi 1 tiếng (0 phút của mỗi giờ)
     // Ký hiệu '0 * * * *' nghĩa là chạy mỗi giờ. Nếu muốn test nhanh mỗi phút dùng '* * * * *'
-    cron.schedule('0 * * * *', async () => {
+    cron.schedule('* * * * *', async () => {
         console.log('--- ⏳ Bắt đầu quét đơn hàng tự động... ---');
 
         try {
