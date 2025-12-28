@@ -17,6 +17,7 @@ interface AuthStore {
     accessToken: string | null;
     setAccessToken: (token: string) => void;
     setUser: (user: User) => void;
+    updateUser: (updates: Partial<User>) => void; // <--- THÊM DÒNG NÀY
     clearAuth: () => void;
 }
 
@@ -38,6 +39,10 @@ export const useAuthStore = create<AuthStore>()(
                 set({ user: null, accessToken: null });
                 localStorage.removeItem('auth-storage');
             },
+            updateUser: (updates) =>
+                set((state) => ({
+                    user: state.user ? { ...state.user, ...updates } : null
+                })),
         }),
         {
             name: 'auth-storage',

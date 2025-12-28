@@ -56,6 +56,10 @@ export function Header() {
                             <div className="relative w-full">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <Input
+                                    type="search"           // 1. Khai báo rõ loại là search
+                                    name="search"           // 2. Đặt tên cụ thể
+                                    id="search-bar"         // 3. ID cụ thể
+                                    autoComplete="off"      // 4. Tắt tự động điền
                                     placeholder="Search books..."
                                     className="w-64 pl-10 rounded-full border-gray-300 focus-visible:ring-[#0df2d7] focus:border-[#0df2d7]"
                                 />

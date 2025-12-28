@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import response from './middleware/response.js';
 
+import runOrderScheduler from './utils/orderScheduler.js';
 
 // Routes
 import userRoutes from './routes/users.js';
@@ -38,7 +39,10 @@ app.use('/api/wishlist', wishlistRoutes);
 // Sync DB and start server
 async function start() {
     try {
-        //   await sequelize.sync({ alter: true });
+        // await sequelize.sync({ alter: true });
+        // === KÍCH HOẠT SCHEDULER ===
+        runOrderScheduler(); // <--- Gọi hàm ở đây
+
         const port = process.env.PORT || 3000;
         app.listen(port, () => {
             console.log(`Server running on port ${port}`);

@@ -1,5 +1,6 @@
 // src/api/orderApi.ts
 import api from './axios';
+import type { Order } from '@/types/order';
 
 export interface PromoCheckBody {
     code: string;
@@ -50,4 +51,9 @@ export const checkPromoCode = async (body: PromoCheckBody) => {
 export const createOrder = async (body: CreateOrderBody) => {
     const { data } = await api.post('/orders', body);
     return data;
+};
+
+export const getMyOrders = async (): Promise<Order[]> => {
+    const { data } = await api.get('/orders/my-orders');
+    return data; // Backend trả về data: [Order...]
 };

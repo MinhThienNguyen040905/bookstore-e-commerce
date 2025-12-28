@@ -43,3 +43,19 @@ export const logout = async () => {
     const { data } = await api.post('/users/logout');
     return data;
 };
+
+// Hàm cập nhật profile (nhận FormData để xử lý cả file và text)
+export const updateProfile = async (formData: FormData) => {
+    // QUAN TRỌNG: Phải set header là multipart/form-data để override cái application/json mặc định
+    const { data } = await api.put('/users/profile', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return data;
+};
+
+export const changePassword = async (data: { oldPassword: string; newPassword: string }) => {
+    const { data: response } = await api.put('/users/change-password', data);
+    return response;
+};
