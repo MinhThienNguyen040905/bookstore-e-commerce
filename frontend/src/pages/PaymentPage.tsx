@@ -8,11 +8,14 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCartQuery } from '@/hooks/useCartQuery';
 import { useCheckPromo } from '@/hooks/usePromo';
-import { useCreateOrder } from '@/hooks/useCreateOrder';
 import { useAuthStore } from '@/features/auth/useAuthStore';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Tag, Truck, CreditCard } from 'lucide-react';
 import { showToast } from '@/lib/toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createOrder, type CreateOrderBody } from '@/api/orderApi';
+import { useVNPayPayment } from '@/hooks/useVNPayPayment';
+import { useCartStore } from '@/features/cart/useCartStore';
 
 export default function PaymentPage() {
     const navigate = useNavigate();
@@ -28,7 +31,37 @@ export default function PaymentPage() {
     const [phone, setPhone] = useState(user?.phone || '');
 
     const checkPromo = useCheckPromo();
-    const createOrder = useCreateOrder();
+    const queryClient = useQueryClient();
+    const clearCart = useCartStore((s) => s.clearCart);
+    const vnpayPayment = useVNPayPayment();
+
+    // Custom mutation để xử lý payment với VNPay
+    const createOrderMutation = useMutation({
+        mutationFn: createOrder,
+        onSuccess: (res) => {
+            const orderId = res.data?.order_id;
+            const totalPrice = finalPrice;
+
+            // Nếu chọn Credit Card (VNPay), redirect đến VNPay
+            if (paymentMethod === 'credit_card' && orderId) {
+                showToast.success('Đơn hàng đã được tạo! Đang chuyển đến cổng thanh toán...');
+                // Gọi VNPay API
+                vnpayPayment.mutate({
+                    orderId: orderId,
+                    amount: totalPrice
+                });
+            } else {
+                // COD hoặc PayPal: navigate trực tiếp đến order success
+                showToast.success(res.message || 'Đặt hàng thành công!');
+                clearCart();
+                queryClient.invalidateQueries({ queryKey: ['cart'] });
+                navigate('/order-success', { state: { order: res.data } });
+            }
+        },
+        onError: (err: any) => {
+            showToast.error(err.response?.data?.message || 'Đặt hàng thất bại');
+        },
+    });
 
     if (!items.length) {
         return (
@@ -61,7 +94,7 @@ export default function PaymentPage() {
         if (!address.trim() || !phone.trim()) {
             return showToast.error('Vui lòng nhập địa chỉ và số điện thoại');
         }
-        createOrder.mutate({
+        createOrderMutation.mutate({
             promo_code: appliedPromo?.code,
             payment_method: paymentMethod,
             address,
@@ -227,10 +260,10 @@ export default function PaymentPage() {
 
                                 <Button
                                     onClick={handlePlaceOrder}
-                                    disabled={createOrder.isPending}
+                                    disabled={createOrderMutation.isPending || vnpayPayment.isPending}
                                     className="w-full h-12 bg-[#0df2d7] hover:bg-[#00dcc3] text-stone-900 font-bold text-base tracking-wide rounded-lg shadow-sm"
                                 >
-                                    {createOrder.isPending ? 'Processing...' : 'Place Order'}
+                                    {createOrderMutation.isPending || vnpayPayment.isPending ? 'Processing...' : 'Place Order'}
                                 </Button>
 
                                 <p className="text-xs text-center text-stone-500">

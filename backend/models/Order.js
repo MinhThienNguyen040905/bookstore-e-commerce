@@ -23,6 +23,18 @@ const Order = sequelize.define('Order', {
     // THÊM 2 TRƯỜNG MỚI
     address: { type: DataTypes.STRING(255), allowNull: true },
     phone: { type: DataTypes.STRING(20), allowNull: true },
+    // THÊM CÁC TRƯỜNG CHO VNPAY
+    payment_status: { 
+        type: DataTypes.STRING(50), 
+        allowNull: true, 
+        defaultValue: 'pending',
+        comment: 'Trạng thái thanh toán: pending, paid, failed'
+    },
+    vnpay_transaction_no: { 
+        type: DataTypes.STRING(50), 
+        allowNull: true,
+        comment: 'Mã giao dịch VNPay'
+    },
 });
 
 export default Order;

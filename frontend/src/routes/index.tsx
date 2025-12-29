@@ -7,6 +7,7 @@ import ResetPasswordFlow from '@/pages/ResetPasswordFlow';
 import CartPage from '@/pages/CartPage';
 import PaymentPage from '@/pages/PaymentPage';
 import OrderSuccessPage from '@/pages/OrderSuccessPage';
+import OrderFailurePage from '@/pages/OrderFailurePage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminPage from '@/pages/AdminPage'; // Import trang admin
 
@@ -19,6 +20,7 @@ export const routes: RouteObject[] = [
     { path: '/cart', element: <CartPage /> },
     { path: '/checkout', element: <PaymentPage /> },
     { path: '/order-success', element: <OrderSuccessPage /> },
+    { path: '/order-failure', element: <OrderFailurePage /> },
     { path: '/profile', element: <ProfilePage /> },
     { path: '/admin', element: <AdminPage /> }, // Thêm route admin
 ];
