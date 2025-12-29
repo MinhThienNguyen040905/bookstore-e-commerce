@@ -5,7 +5,6 @@ import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import response from './middleware/response.js';
-
 import runOrderScheduler from './utils/orderScheduler.js';
 
 // Routes
@@ -17,8 +16,10 @@ import reviewRoutes from './routes/reviews.js';
 import promoRoutes from './routes/promos.js';
 import statsRoutes from './routes/stats.js';
 import wishlistRoutes from './routes/wishlist.js';
+import genreRoutes from './routes/genres.js';
+import authorRoutes from './routes/authors.js';
+import publisherRoutes from './routes/publishers.js';
 import paymentRoutes from './routes/payment.js';
-
 
 const app = express();
 
@@ -36,6 +37,9 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/promos', promoRoutes);
 app.use('/api/admin/stats', statsRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/authors', authorRoutes);
+app.use('/api/publishers', publisherRoutes);
+app.use('/api/genres', genreRoutes);
 app.use('/api/payment', paymentRoutes);
 
 // Sync DB and start server

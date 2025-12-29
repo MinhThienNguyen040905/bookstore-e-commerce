@@ -14,33 +14,76 @@ import fs from 'fs';
 const upload = multer({ dest: 'uploads/' });
 const uploadCover = upload.single('cover_image');
 
+
+const parseIds = (input) => {
+    if (!input) return [];
+
+    // Trường hợp 1: Đã là mảng (nếu frontend gửi dạng json hoặc x-www-form-urlencoded chuẩn)
+    if (Array.isArray(input)) {
+        return input.map(id => parseInt(id)).filter(id => !isNaN(id));
+    }
+
+    // Trường hợp 2: Là chuỗi
+    if (typeof input === 'string') {
+        // Nếu là chuỗi JSON "[1,2]"
+        if (input.startsWith('[')) {
+            try {
+                return JSON.parse(input).map(id => parseInt(id));
+            } catch (e) {
+                return [];
+            }
+        }
+        // Nếu là chuỗi ngăn cách dấu phẩy "1,2,3"
+        return input.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+    }
+
+    // Trường hợp 3: Là số đơn lẻ
+    return [parseInt(input)];
+};
+
 // === ADD BOOK ===
 const addBook = async (req, res) => {
+    // authors và genres nhận vào là danh sách ID (VD: "1,2" hoặc [1,2])
     const { title, description, publisher_id, stock, price, release_date, isbn, authors, genres } = req.body;
+
     try {
         let cover_image = '';
         if (req.file) {
             const result = await cloudinary.uploader.upload(req.file.path);
             cover_image = result.secure_url;
-            fs.unlinkSync(req.file.path); // Xóa file tạm
+            fs.unlinkSync(req.file.path);
         }
 
+        // Tạo sách
         const book = await Book.create({
             title, description, publisher_id, stock, price,
             cover_image, release_date, isbn
         });
 
+        // Xử lý Authors (Many-to-Many)
+        // Sequelize hỗ trợ truyền trực tiếp mảng ID vào hàm add/set
         if (authors) {
-            const authorInstances = await Author.findAll({ where: { author_id: authors.split(',') } });
-            await book.addAuthors(authorInstances);
+            const authorIds = parseIds(authors);
+            if (authorIds.length > 0) {
+                await book.addAuthors(authorIds); // [cite: 2134]
+            }
         }
+
+        // Xử lý Genres (Many-to-Many)
         if (genres) {
-            const genreInstances = await Genre.findAll({ where: { genre_id: genres.split(',') } });
-            await book.addGenres(genreInstances);
+            const genreIds = parseIds(genres);
+            if (genreIds.length > 0) {
+                await book.addGenres(genreIds); // [cite: 2147]
+            }
         }
 
         res.success({ book_id: book.book_id }, 'Thêm sách thành công', 201);
     } catch (err) {
+        // Xóa ảnh nếu tạo sách thất bại (dọn rác)
+        if (req.file && !res.headersSent) {
+            // Logic xóa ảnh trên cloud nếu cần
+        }
+        console.error(err);
         res.error(err.message || 'Lỗi thêm sách', 400);
     }
 };
@@ -90,7 +133,7 @@ const getBooks = async (req, res) => {
     try {
         // Build basic filters
         const where = buildBookFilters({ keyword, min_price, max_price });
-        
+
         // Pagination
         const currentPage = Math.max(parseInt(page) || 1, 1);
         const queryLimit = Math.max(parseInt(limit) || 20, 1);
@@ -363,78 +406,48 @@ const updateBook = async (req, res) => {
     const { title, description, publisher_id, stock, price, release_date, isbn, authors, genres } = req.body;
 
     try {
-        // Validation: ID phải là số
-        if (isNaN(id)) {
-            return res.error('ID sách không hợp lệ', 400);
-        }
+        if (isNaN(id)) return res.error('ID sách không hợp lệ', 400);
 
         const book = await Book.findByPk(id);
-        if (!book) {
-            return res.error('Không tìm thấy sách', 404);
-        }
+        if (!book) return res.error('Không tìm thấy sách', 404);
 
-        // Validation: Price phải là số dương
-        if (price !== undefined && (isNaN(price) || price < 0)) {
-            return res.error('Giá sách phải là số dương', 400);
-        }
+        // Validation cơ bản
+        if (price !== undefined && (isNaN(price) || price < 0)) return res.error('Giá sách phải là số dương', 400);
+        if (stock !== undefined && (isNaN(stock) || stock < 0)) return res.error('Tồn kho phải là số dương', 400);
 
-        // Validation: Stock phải là số nguyên không âm
-        if (stock !== undefined && (isNaN(stock) || stock < 0 || !Number.isInteger(Number(stock)))) {
-            return res.error('Số lượng tồn kho phải là số nguyên không âm', 400);
-        }
-
-        // Validation: Publisher ID phải là số
-        if (publisher_id !== undefined && isNaN(publisher_id)) {
-            return res.error('ID nhà xuất bản không hợp lệ', 400);
-        }
-
-        // Nếu có upload ảnh mới
-        let cover_image = book.cover_image; // Giữ ảnh cũ mặc định
+        // Xử lý ảnh mới
+        let cover_image = undefined;
         if (req.file) {
             const result = await cloudinary.uploader.upload(req.file.path);
             cover_image = result.secure_url;
-            fs.unlinkSync(req.file.path); // Xóa file tạm
+            fs.unlinkSync(req.file.path);
 
-            // (Bonus) Xóa ảnh cũ trên Cloudinary
+            // Xóa ảnh cũ
             if (book.cover_image) {
                 try {
-                    const urlParts = book.cover_image.split('/');
-                    const publicIdWithExt = urlParts[urlParts.length - 1];
-                    const publicId = publicIdWithExt.split('.')[0];
+                    const publicId = book.cover_image.split('/').pop().split('.')[0];
                     await cloudinary.uploader.destroy(publicId);
-                } catch (err) {
-                    console.log('Không xóa được ảnh cũ:', err.message);
-                }
+                } catch (e) { console.log('Lỗi xóa ảnh cũ:', e.message); }
             }
         }
 
-        // Update các field (chỉ update những field được truyền vào)
-        const updateData = {};
-        if (title !== undefined) updateData.title = title;
-        if (description !== undefined) updateData.description = description;
-        if (publisher_id !== undefined) updateData.publisher_id = publisher_id;
-        if (stock !== undefined) updateData.stock = stock;
-        if (price !== undefined) updateData.price = price;
-        if (release_date !== undefined) updateData.release_date = release_date;
-        if (isbn !== undefined) updateData.isbn = isbn;
-        if (cover_image) updateData.cover_image = cover_image;
+        // Update thông tin cơ bản
+        await book.update({
+            title, description, publisher_id, stock, price, release_date, isbn,
+            ...(cover_image && { cover_image }) // Chỉ update nếu có ảnh mới
+        });
 
-        await book.update(updateData);
-
-        // Update authors nếu có
-        if (authors) {
-            const authorInstances = await Author.findAll({ 
-                where: { author_id: authors.split(',').map(id => id.trim()) } 
-            });
-            await book.setAuthors(authorInstances); // setAuthors thay vì addAuthors
+        // Update Authors (Dùng setAuthors để thay thế toàn bộ danh sách cũ bằng mới)
+        if (authors !== undefined) {
+            const authorIds = parseIds(authors);
+            // setAuthors([]) sẽ xóa hết tác giả nếu mảng rỗng, đúng ý đồ update
+            await book.setAuthors(authorIds);
         }
 
-        // Update genres nếu có
-        if (genres) {
-            const genreInstances = await Genre.findAll({ 
-                where: { genre_id: genres.split(',').map(id => id.trim()) } 
-            });
-            await book.setGenres(genreInstances);
+        // Update Genres (Tương tự)
+        if (genres !== undefined) {
+            const genreIds = parseIds(genres);
+            await book.setGenres(genreIds);
         }
 
         res.success({ book_id: book.book_id }, 'Cập nhật sách thành công');
@@ -483,4 +496,63 @@ const deleteBook = async (req, res) => {
     }
 };
 
-export default { uploadCover, addBook, updateBook, deleteBook, getBooks, getNewReleases, getTopRatedBooks, getBookById };
+// === LẤY TẤT CẢ SÁCH (CÓ PHÂN TRANG) ===
+const getAllBooksSystem = async (req, res) => {
+    try {
+        // 1. Lấy tham số từ Query String (URL)
+        // Mặc định: trang 1, 20 sách/trang nếu không gửi lên
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = (page - 1) * limit;
+
+        // 2. Query DB với phân trang
+        const { count, rows } = await Book.findAndCountAll({
+            // Giới hạn số lượng và vị trí bắt đầu
+            limit: limit,
+            offset: offset,
+
+            // Sắp xếp: Sách mới nhất lên đầu
+            order: [['book_id', 'DESC']],
+
+            // Lấy đầy đủ thông tin liên quan
+            include: [
+                {
+                    model: Publisher,
+                    attributes: ['publisher_id', 'name']
+                },
+                {
+                    model: Author,
+                    attributes: ['author_id', 'name'],
+                    through: { attributes: [] }
+                },
+                {
+                    model: Genre,
+                    attributes: ['genre_id', 'name'],
+                    through: { attributes: [] }
+                }
+            ],
+            // distinct: true là quan trọng khi dùng include để đếm chính xác số lượng sách (tránh bị nhân đôi do join)
+            distinct: true
+        });
+
+        // 3. Trả về kết quả kèm Metadata phân trang
+        res.success({
+            books: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+                pageSize: limit
+            }
+        }, 'Lấy danh sách sách thành công');
+
+    } catch (err) {
+        console.error('Get all books system error:', err);
+        res.error('Lỗi server khi lấy danh sách sách', 500);
+    }
+};
+
+export default {
+    uploadCover, addBook, updateBook, deleteBook, getBooks, getNewReleases, getTopRatedBooks, getBookById,
+    getAllBooksSystem
+};
