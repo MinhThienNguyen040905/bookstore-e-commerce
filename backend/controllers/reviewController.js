@@ -2,6 +2,9 @@ import { Op } from 'sequelize';
 import Review from '../models/Review.js';
 import Book from '../models/Book.js';
 import User from '../models/User.js';
+import Order from '../models/Order.js';
+import OrderItem from '../models/OrderItem.js';
+import { ORDER_STATUS } from '../constants/orderStatus.js';
 
 // Thêm đánh giá
 const addReview = async (req, res) => {
@@ -16,6 +19,27 @@ const addReview = async (req, res) => {
         // Kiểm tra đã đánh giá chưa
         const existingReview = await Review.findOne({ where: { user_id: req.user.user_id, book_id } });
         if (existingReview) return res.status(400).json({ msg: 'You have already reviewed this book' });
+
+        // ===== VERIFIED REVIEWS LOGIC =====
+        // Kiểm tra xem user có đơn hàng nào chứa sách này với trạng thái 'delivered' không
+        const deliveredOrder = await Order.findOne({
+            where: {
+                user_id: req.user.user_id,
+                status: ORDER_STATUS.DELIVERED
+            },
+            include: [{
+                model: OrderItem,
+                where: { book_id },
+                required: true
+            }]
+        });
+
+        if (!deliveredOrder) {
+            return res.status(403).json({ 
+                msg: 'Bạn chỉ có thể đánh giá sách sau khi đơn hàng đã được giao thành công' 
+            });
+        }
+        // ===== END VERIFIED REVIEWS LOGIC =====
 
         const review = await Review.create({
             user_id: req.user.user_id,
