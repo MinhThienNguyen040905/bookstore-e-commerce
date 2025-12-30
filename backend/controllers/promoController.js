@@ -41,14 +41,35 @@ const getPromos = async (req, res) => {
     }
 };
 
-// === LẤY TẤT CẢ MÃ (ADMIN) ===
+// === LẤY TẤT CẢ MÃ (ADMIN - CÓ PHÂN TRANG) ===
 const getAllPromos = async (req, res) => {
     try {
-        const promos = await PromoCode.findAll({
-            order: [['createdAt', 'DESC']]
+        // 1. Lấy tham số từ Query String
+        // Mặc định: trang 1, 20 mã/trang
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.max(parseInt(req.query.limit) || 20, 1);
+        const offset = (page - 1) * limit;
+
+        // 2. Query DB dùng findAndCountAll
+        const { count, rows } = await PromoCode.findAndCountAll({
+            limit: limit,
+            offset: offset,
+            order: [['createdAt', 'DESC']] // Mã mới nhất lên đầu
         });
-        res.success(promos, 'Lấy tất cả mã khuyến mãi thành công');
+
+        // 3. Trả về kết quả kèm Metadata phân trang
+        res.success({
+            promos: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+                pageSize: limit
+            }
+        }, 'Lấy tất cả mã khuyến mãi thành công');
+
     } catch (err) {
+        console.error('Get all promos error:', err);
         res.error('Lỗi server', 500);
     }
 };

@@ -1,6 +1,9 @@
 // src/components/admin/AdminSidebar.tsx
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Users, BookOpen, ShoppingCart, List, Tag } from 'lucide-react';
+import {
+    LayoutDashboard, Users, BookOpen, ShoppingCart,
+    List, Tag, PenTool, Building2
+} from 'lucide-react'; // Import thêm icon PenTool (Author) và Building2 (Publisher)
 
 interface AdminSidebarProps {
     activeTab: string;
@@ -17,46 +20,43 @@ export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
 
                 <nav className="flex flex-col gap-1">
                     <NavItem
-                        icon={<LayoutDashboard className="w-5 h-5" />}
-                        label="Dashboard"
-                        id="dashboard"
-                        isActive={activeTab === 'dashboard'}
-                        onClick={() => setActiveTab('dashboard')}
+                        icon={<LayoutDashboard className="w-5 h-5" />} label="Dashboard" id="dashboard"
+                        isActive={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')}
                     />
                     <NavItem
-                        icon={<Users className="w-5 h-5" />}
-                        label="Users"
-                        id="users"
-                        isActive={activeTab === 'users'}
-                        onClick={() => setActiveTab('users')}
+                        icon={<Users className="w-5 h-5" />} label="Users" id="users"
+                        isActive={activeTab === 'users'} onClick={() => setActiveTab('users')}
                     />
                     <NavItem
-                        icon={<BookOpen className="w-5 h-5" />}
-                        label="Books"
-                        id="books"
-                        isActive={activeTab === 'books'}
-                        onClick={() => setActiveTab('books')}
+                        icon={<BookOpen className="w-5 h-5" />} label="Books" id="books"
+                        isActive={activeTab === 'books'} onClick={() => setActiveTab('books')}
                     />
                     <NavItem
-                        icon={<ShoppingCart className="w-5 h-5" />}
-                        label="Orders"
-                        id="orders"
-                        isActive={activeTab === 'orders'}
-                        onClick={() => setActiveTab('orders')}
+                        icon={<ShoppingCart className="w-5 h-5" />} label="Orders" id="orders"
+                        isActive={activeTab === 'orders'} onClick={() => setActiveTab('orders')}
+                    />
+
+                    {/* --- CÁC MỤC MỚI --- */}
+                    <div className="my-2 border-t border-stone-100"></div>
+
+                    <NavItem
+                        icon={<List className="w-5 h-5" />} label="Genres" id="genres" // Đổi từ Categories -> Genres
+                        isActive={activeTab === 'genres'} onClick={() => setActiveTab('genres')}
                     />
                     <NavItem
-                        icon={<List className="w-5 h-5" />}
-                        label="Categories"
-                        id="categories"
-                        isActive={activeTab === 'categories'}
-                        onClick={() => setActiveTab('categories')}
+                        icon={<PenTool className="w-5 h-5" />} label="Authors" id="authors"
+                        isActive={activeTab === 'authors'} onClick={() => setActiveTab('authors')}
                     />
                     <NavItem
-                        icon={<Tag className="w-5 h-5" />}
-                        label="Discounts"
-                        id="discounts"
-                        isActive={activeTab === 'discounts'}
-                        onClick={() => setActiveTab('discounts')}
+                        icon={<Building2 className="w-5 h-5" />} label="Publishers" id="publishers"
+                        isActive={activeTab === 'publishers'} onClick={() => setActiveTab('publishers')}
+                    />
+
+                    <div className="my-2 border-t border-stone-100"></div>
+
+                    <NavItem
+                        icon={<Tag className="w-5 h-5" />} label="Discounts" id="discounts"
+                        isActive={activeTab === 'discounts'} onClick={() => setActiveTab('discounts')}
                     />
                 </nav>
             </div>
@@ -64,6 +64,7 @@ export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
     );
 }
 
+// NavItem giữ nguyên...
 function NavItem({ icon, label, id, isActive, onClick }: any) {
     return (
         <button

@@ -2,13 +2,33 @@
 import Publisher from '../models/Publisher.js';
 import Book from '../models/Book.js'; // Import để kiểm tra ràng buộc khi xóa
 
-// === LẤY DANH SÁCH NXB ===
+// === LẤY DANH SÁCH NXB (CÓ PHÂN TRANG) ===
 const getPublishers = async (req, res) => {
     try {
-        const publishers = await Publisher.findAll({
+        // 1. Lấy tham số từ Query String (URL)
+        // Mặc định: trang 1, 20 NXB/trang
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.max(parseInt(req.query.limit) || 20, 1);
+        const offset = (page - 1) * limit;
+
+        // 2. Query DB dùng findAndCountAll
+        const { count, rows } = await Publisher.findAndCountAll({
+            limit: limit,
+            offset: offset,
             order: [['name', 'ASC']] // Sắp xếp A-Z
         });
-        res.success(publishers, 'Lấy danh sách nhà xuất bản thành công');
+
+        // 3. Trả về kết quả kèm Metadata phân trang
+        res.success({
+            publishers: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+                pageSize: limit
+            }
+        }, 'Lấy danh sách nhà xuất bản thành công');
+
     } catch (err) {
         console.error('Get publishers error:', err);
         res.error('Lỗi server', 500);

@@ -265,17 +265,53 @@ const getMyOrders = async (req, res) => {
 
 const getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.findAll({
+        // 1. Lấy tham số phân trang từ Query String
+        // Mặc định: trang 1, 10 đơn/trang
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        // 2. Query DB với phân trang
+        // Sử dụng findAndCountAll để lấy cả dữ liệu và tổng số lượng
+        const { count, rows } = await Order.findAndCountAll({
+            distinct: true, // Quan trọng: Đếm chính xác số Order (tránh bị nhân bản do join OrderItems)
+            limit: limit,
+            offset: offset,
+            order: [['order_date', 'DESC']],
             include: [
-                { model: OrderItem, include: [Book] },
-                { model: PromoCode, attributes: ['code', 'discount_percent'] },
-                { model: User, attributes: ['user_id', 'name', 'email'] }
-            ],
-            order: [['order_date', 'DESC']]
+                {
+                    model: OrderItem,
+                    include: [
+                        {
+                            model: Book,
+                            attributes: ['book_id', 'title', 'cover_image'] // Chỉ lấy thông tin cần thiết
+                        }
+                    ]
+                },
+                {
+                    model: PromoCode,
+                    attributes: ['code', 'discount_percent']
+                },
+                {
+                    model: User,
+                    attributes: ['user_id', 'name', 'email']
+                }
+            ]
         });
-        res.success(orders, 'Lấy tất cả đơn hàng thành công');
+
+        // 3. Trả về kết quả kèm Metadata phân trang
+        res.success({
+            orders: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+                pageSize: limit
+            }
+        }, 'Lấy tất cả đơn hàng thành công');
+
     } catch (err) {
-        console.error(err);
+        console.error('GetAllOrders error:', err);
         res.error('Lỗi server', 500);
     }
 };
@@ -359,4 +395,74 @@ const cancelOrder = async (req, res) => {
     }
 };
 
-export default { createOrder, getOrders, getMyOrders, getAllOrders, updateOrderStatus, cancelOrder };
+const getOrderById = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.user_id;
+    const userRole = req.user.role;
+
+    try {
+        const order = await Order.findByPk(id, {
+            include: [
+                {
+                    model: OrderItem,
+                    include: [
+                        {
+                            model: Book,
+                            attributes: ['book_id', 'title', 'cover_image', 'price'] // Lấy thông tin sách
+                        }
+                    ]
+                },
+                {
+                    model: PromoCode,
+                    attributes: ['code', 'discount_percent', 'min_amount']
+                },
+                {
+                    model: User,
+                    attributes: ['user_id', 'name', 'email', 'phone', 'address'] // Lấy thông tin người mua
+                }
+            ]
+        });
+
+        if (!order) {
+            return res.error('Đơn hàng không tồn tại', 404);
+        }
+
+        // --- CHECK QUYỀN: Chỉ Admin hoặc Chính chủ mới được xem ---
+        if (userRole !== 'admin' && order.user_id !== userId) {
+            return res.error('Bạn không có quyền xem đơn hàng này', 403);
+        }
+
+        // Format lại dữ liệu trả về cho đẹp (nếu cần)
+        // Kết hợp logic Timeline (nếu bạn muốn dùng lại hàm buildStatusHistory)
+        const result = {
+            order_id: order.order_id,
+            status: order.status,
+            total_price: Number(order.total_price),
+            payment_method: order.payment_method,
+            address: order.address,
+            phone: order.phone,
+            order_date: order.order_date,
+            user: order.User, // Thông tin người mua
+            promo: order.PromoCode, // Thông tin mã giảm giá
+            items: order.OrderItems.map(item => ({
+                order_item_id: item.order_item_id,
+                quantity: item.quantity,
+                price: Number(item.price),
+                book: item.Book
+            })),
+            // Tái sử dụng hàm buildStatusHistory (nếu đã khai báo trong file này)
+            // Nếu chưa có hàm buildStatusHistory thì bỏ dòng này đi
+            status_history: (typeof buildStatusHistory === 'function')
+                ? buildStatusHistory(order.status, order.order_date)
+                : []
+        };
+
+        res.success(result, 'Lấy chi tiết đơn hàng thành công');
+
+    } catch (err) {
+        console.error('GetOrderById error:', err);
+        res.error('Lỗi server', 500);
+    }
+};
+
+export default { createOrder, getOrders, getMyOrders, getAllOrders, updateOrderStatus, cancelOrder, getOrderById };

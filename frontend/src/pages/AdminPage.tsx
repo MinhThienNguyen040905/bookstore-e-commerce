@@ -1,6 +1,6 @@
 // src/pages/AdminPage.tsx
 import { useState } from 'react';
-import { Header } from '@/layouts/Header'; // Sử dụng Header CŨ
+import { Header } from '@/layouts/Header';
 import { Footer } from '@/layouts/Footer';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
@@ -12,12 +12,16 @@ import { DashboardTab } from '@/components/admin/tabs/DashboardTab';
 import { UsersTab } from '@/components/admin/tabs/UsersTab';
 import { BooksTab } from '@/components/admin/tabs/BooksTab';
 import { OrdersTab } from '@/components/admin/tabs/OrdersTab';
+import { GenresTab } from '@/components/admin/tabs/GenresTab'; // <--- 1. THÊM DÒNG NÀY
+import { AuthorsTab } from '@/components/admin/tabs/AuthorsTab';
+import { PublishersTab } from '@/components/admin/tabs/PublishersTab';
+import { DiscountsTab } from '@/components/admin/tabs/DiscountsTab';
 
 export default function AdminPage() {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('dashboard');
 
-    // Bảo vệ Client-side (Nếu không phải admin thì chặn)
+    // Bảo vệ Client-side
     if (!user || user.role !== 'admin') {
         return (
             <div className="flex flex-col min-h-screen bg-[#f5f8f8]">
@@ -41,22 +45,27 @@ export default function AdminPage() {
             case 'users': return <UsersTab />;
             case 'books': return <BooksTab />;
             case 'orders': return <OrdersTab />;
-            default: return <div className="text-stone-500">Feature coming soon...</div>;
+
+            // --- 2. THÊM CASE NÀY ---
+            case 'genres': return <GenresTab />;
+
+            case 'authors': return <AuthorsTab />;
+            case 'publishers': return <PublishersTab />;
+            case 'discounts': return <DiscountsTab />;
+
+            default: return <DashboardTab />;
         }
     };
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f5f8f8]">
-            {/* 1. GIỮ LẠI HEADER CŨ */}
             <Header />
 
             <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-                    {/* 2. ADMIN SIDEBAR */}
                     <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-                    {/* 3. MAIN CONTENT AREA */}
                     <div className="flex-1 w-full min-w-0">
                         {renderContent()}
                     </div>
