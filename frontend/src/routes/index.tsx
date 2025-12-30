@@ -10,6 +10,7 @@ import OrderSuccessPage from '@/pages/OrderSuccessPage';
 import OrderFailurePage from '@/pages/OrderFailurePage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminPage from '@/pages/AdminPage'; // Import trang admin
+import ShopPage from '@/pages/ShopPage';
 
 export const routes: RouteObject[] = [
     { path: '/', element: <Home /> },
@@ -23,4 +24,5 @@ export const routes: RouteObject[] = [
     { path: '/order-failure', element: <OrderFailurePage /> },
     { path: '/profile', element: <ProfilePage /> },
     { path: '/admin', element: <AdminPage /> }, // Thêm route admin
+    { path: '/shop', element: <ShopPage /> }
 ];
