@@ -2,19 +2,38 @@
 import Author from '../models/Author.js';
 import Book from '../models/Book.js';
 
-// === LẤY TẤT CẢ TÁC GIẢ ===
+// === LẤY TẤT CẢ TÁC GIẢ (CÓ PHÂN TRANG) ===
 const getAuthors = async (req, res) => {
     try {
-        const authors = await Author.findAll({
+        // 1. Lấy tham số từ Query String
+        // Mặc định: trang 1, 20 tác giả/trang
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.max(parseInt(req.query.limit) || 20, 1);
+        const offset = (page - 1) * limit;
+
+        // 2. Query DB dùng findAndCountAll
+        const { count, rows } = await Author.findAndCountAll({
+            limit: limit,
+            offset: offset,
             order: [['name', 'ASC']] // Sắp xếp tên A-Z
         });
-        res.success(authors, 'Lấy danh sách tác giả thành công');
+
+        // 3. Trả về kết quả kèm Metadata phân trang
+        res.success({
+            authors: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+                pageSize: limit
+            }
+        }, 'Lấy danh sách tác giả thành công');
+
     } catch (err) {
         console.error('Get authors error:', err);
         res.error('Lỗi server', 500);
     }
 };
-
 // === THÊM TÁC GIẢ (Admin) ===
 const addAuthor = async (req, res) => {
     const { name } = req.body;
