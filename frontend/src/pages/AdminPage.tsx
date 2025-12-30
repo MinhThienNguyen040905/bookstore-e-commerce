@@ -14,6 +14,8 @@ import { BooksTab } from '@/components/admin/tabs/BooksTab';
 import { OrdersTab } from '@/components/admin/tabs/OrdersTab';
 import { GenresTab } from '@/components/admin/tabs/GenresTab'; // <--- 1. THÊM DÒNG NÀY
 import { AuthorsTab } from '@/components/admin/tabs/AuthorsTab';
+import { PublishersTab } from '@/components/admin/tabs/PublishersTab';
+import { DiscountsTab } from '@/components/admin/tabs/DiscountsTab';
 
 export default function AdminPage() {
     const { user } = useAuth();
@@ -48,8 +50,8 @@ export default function AdminPage() {
             case 'genres': return <GenresTab />;
 
             case 'authors': return <AuthorsTab />;
-            case 'publishers': return <div className="p-12 text-center text-stone-500">Publishers Management (Coming Soon)</div>;
-            case 'discounts': return <div className="p-12 text-center text-stone-500">Discounts Management (Coming Soon)</div>;
+            case 'publishers': return <PublishersTab />;
+            case 'discounts': return <DiscountsTab />;
 
             default: return <DashboardTab />;
         }
