@@ -9,5 +9,6 @@ router.get('/', auth, orderController.getOrders);
 router.get('/all', auth, adminAuth, orderController.getAllOrders);
 router.put('/order-status', auth, adminAuth, orderController.updateOrderStatus);
 router.put('/cancel', auth, orderController.cancelOrder);
+router.get('/:id', auth, orderController.getOrderById);
 
 export default router;
