@@ -105,7 +105,7 @@ export function SearchBar() {
                             ))}
 
                             {/* Nút xem tất cả kết quả */}
-                            <div
+                            {/* <div
                                 onClick={() => {
                                     navigate(`/?search=${searchTerm}`); // Giả sử trang chủ lọc được search
                                     setIsOpen(false);
@@ -113,7 +113,7 @@ export function SearchBar() {
                                 className="block px-4 py-3 text-center text-sm font-bold text-[#009b8f] bg-stone-50 hover:bg-[#0df2d7]/10 cursor-pointer transition-colors"
                             >
                                 View all results for "{searchTerm}"
-                            </div>
+                            </div> */}
                         </div>
                     ) : !isLoading && (
                         <div className="p-6 text-center text-stone-500 text-sm">
