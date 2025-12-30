@@ -1,5 +1,5 @@
 // src/layouts/Header.tsx
-import { Search, ShoppingCart, User, BookOpen, LogOut, UserCircle, LayoutDashboard } from 'lucide-react'; // Thêm icon LayoutDashboard
+import { Search, ShoppingCart, User, BookOpen, LogOut, UserCircle, LayoutDashboard, Package } from 'lucide-react'; // Thêm icon LayoutDashboard và Package
 import { useCartQuery } from '@/hooks/useCartQuery';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -100,6 +100,13 @@ export function Header() {
                                             <Link to="/profile" className="cursor-pointer w-full flex items-center">
                                                 <UserCircle className="mr-2 h-4 w-4" />
                                                 <span>Profile</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem asChild>
+                                            <Link to="/my-orders" className="cursor-pointer w-full flex items-center">
+                                                <Package className="mr-2 h-4 w-4" />
+                                                <span>Đơn hàng của tôi</span>
                                             </Link>
                                         </DropdownMenuItem>
 

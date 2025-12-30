@@ -1,8 +1,9 @@
 # 📊 PHÂN TÍCH CÁC TÍNH NĂNG CÒN THIẾU (GAP FEATURES)
 
 **Ngày phân tích:** 2025-01-XX  
+**Cập nhật lần cuối:** 2025-01-XX  
 **Dự án:** Bookstore E-commerce  
-**Trạng thái:** Backend ~85% hoàn thành, Frontend ~60% hoàn thành
+**Trạng thái:** Backend ~90% hoàn thành, Frontend ~75% hoàn thành
 
 ---
 
@@ -65,49 +66,50 @@ Dự án đã có nền tảng vững chắc với các tính năng core đã đ
 
 ---
 
-### 3. **User Profile Page** 🔴 **QUAN TRỌNG**
+### 3. **User Profile Page** ✅ **ĐÃ HOÀN THÀNH**
 
-**Backend:** ⚠️ **MỘT PHẦN**
+**Backend:** ✅ **ĐÃ HOÀN THÀNH**
 - ✅ API `GET /api/users` (admin only) - Lấy danh sách users
-- ❌ **THIẾU** API `GET /api/users/me` - Lấy thông tin user hiện tại
-- ❌ **THIẾU** API `PUT /api/users/me` - Cập nhật thông tin user
-- ❌ **THIẾU** API `PUT /api/users/me/password` - Đổi mật khẩu
-- ❌ **THIẾU** API `POST /api/users/me/avatar` - Upload avatar
+- ✅ API `PUT /api/users/profile` - Cập nhật thông tin user (name, phone, address, avatar)
+- ✅ API `PUT /api/users/change-password` - Đổi mật khẩu
+- ✅ Upload avatar tích hợp với Cloudinary
+- ⚠️ **LƯU Ý:** User info được lấy từ JWT token, không cần API riêng `GET /api/users/me`
 
-**Frontend:** ❌ **CHƯA CÓ**
-- ❌ Không có trang Profile (`ProfilePage.tsx`)
-- ❌ Header có link đến `/profile` (line 84) nhưng **route chưa tồn tại**
-- ❌ Không có form cập nhật thông tin cá nhân
-- ❌ Không có form đổi mật khẩu
-- ❌ Không có upload avatar UI
+**Frontend:** ✅ **ĐÃ HOÀN THÀNH**
+- ✅ Trang Profile (`ProfilePage.tsx`) với sidebar navigation
+- ✅ Route `/profile` đã được thêm vào `routes/index.tsx`
+- ✅ Component `ProfileTab.tsx` với form cập nhật thông tin cá nhân
+- ✅ Form đổi mật khẩu tích hợp trong `ProfileTab`
+- ✅ Upload avatar UI với preview
+- ✅ Hook `useAuth` có `updateProfile` và `changePassword` mutations
+- ✅ API client `authApi.ts` có `updateProfile` và `changePassword` functions
 
-**Ảnh hưởng:** Người dùng không thể quản lý thông tin cá nhân, đổi mật khẩu, hoặc cập nhật avatar.
-
-**Độ ưu tiên:** 🔴 **CAO** - Tính năng cơ bản của user account.
+**Trạng thái:** ✅ **HOÀN THÀNH** - Người dùng có thể quản lý thông tin cá nhân, đổi mật khẩu, và cập nhật avatar.
 
 ---
 
-### 4. **Order History Page** 🔴 **QUAN TRỌNG**
+### 4. **Order History Page** ✅ **ĐÃ HOÀN THÀNH**
 
 **Backend:** ✅ **ĐÃ HOÀN THÀNH**
 - ✅ API `GET /api/orders` - Lấy đơn hàng của user
 - ✅ API `GET /api/orders/my-orders` - Lấy đơn hàng với timeline status
 - ✅ Response có `status_history` với timeline chi tiết
 
-**Frontend:** ❌ **CHƯA CÓ**
-- ❌ Không có trang Order History (`OrderHistoryPage.tsx`)
-- ❌ `OrderSuccessPage` có link đến `/orders` (line 202) nhưng **route chưa tồn tại**
-- ❌ Không có API client function (`orderApi.ts` chỉ có `createOrder`, `checkPromoCode`)
-- ❌ Không có component hiển thị timeline trạng thái đơn hàng
-- ❌ Không có trang chi tiết đơn hàng (`OrderDetailPage.tsx`)
+**Frontend:** ✅ **ĐÃ HOÀN THÀNH**
+- ✅ Trang Order History (`MyOrdersPage.tsx`) - Trang riêng biệt
+- ✅ Component `OrdersTab.tsx` - Tab trong ProfilePage
+- ✅ Route `/my-orders` đã được thêm vào `routes/index.tsx`
+- ✅ API client function `getMyOrders` trong `orderApi.ts`
+- ✅ Hook `useMyOrders` và `useCancelOrder` trong `useOrders.ts`
+- ✅ Component `OrderDetail.tsx` hiển thị chi tiết đơn hàng với timeline
+- ✅ Component `ReviewModal.tsx` để tạo review từ order history
+- ✅ Hiển thị timeline trạng thái đơn hàng với icons và colors
 
-**Ảnh hưởng:** Người dùng không thể xem lịch sử đơn hàng sau khi đặt hàng thành công.
-
-**Độ ưu tiên:** 🔴 **CAO** - Tính năng quan trọng cho user experience.
+**Trạng thái:** ✅ **HOÀN THÀNH** - Người dùng có thể xem lịch sử đơn hàng, chi tiết đơn hàng, và tạo review.
 
 ---
 
-### 5. **Admin Dashboard** 🔴 **RẤT QUAN TRỌNG**
+### 5. **Admin Dashboard** ✅ **ĐÃ HOÀN THÀNH**
 
 **Backend:** ✅ **ĐÃ HOÀN THÀNH**
 - ✅ API `GET /api/admin/stats` - Thống kê dashboard
@@ -119,26 +121,32 @@ Dự án đã có nền tảng vững chắc với các tính năng core đã đ
 - ✅ API `DELETE /api/books/:id` - Xóa sách (admin only)
 - ✅ API `GET /api/promos/all` - Lấy tất cả promos (admin only)
 - ✅ API `POST /api/promos` - Tạo promo (admin only)
+- ✅ API quản lý Genres, Authors, Publishers
 
-**Frontend:** ❌ **CHƯA CÓ HOÀN TOÀN**
-- ❌ Không có trang Admin Dashboard (`AdminDashboard.tsx`)
-- ❌ Không có trang quản lý sách (`AdminBooksPage.tsx`)
-- ❌ Không có trang quản lý đơn hàng (`AdminOrdersPage.tsx`)
-- ❌ Không có trang quản lý users (`AdminUsersPage.tsx`)
-- ❌ Không có trang quản lý promos (`AdminPromosPage.tsx`)
-- ❌ Không có protected routes cho admin
-- ❌ Không có admin navigation/menu
-- ❌ Không có role-based UI (hiển thị menu admin cho user có role='admin')
+**Frontend:** ✅ **ĐÃ HOÀN THÀNH**
+- ✅ Trang Admin Dashboard (`AdminPage.tsx`) với tab-based navigation
+- ✅ Component `DashboardTab.tsx` - Thống kê với charts (Recharts)
+- ✅ Component `UsersTab.tsx` - Quản lý users với search, pagination
+- ✅ Component `BooksTab.tsx` - Quản lý sách với CRUD đầy đủ
+- ✅ Component `OrdersTab.tsx` - Quản lý đơn hàng với update status
+- ✅ Component `GenresTab.tsx` - Quản lý thể loại
+- ✅ Component `AuthorsTab.tsx` - Quản lý tác giả
+- ✅ Component `PublishersTab.tsx` - Quản lý nhà xuất bản
+- ✅ Component `DiscountsTab.tsx` - Quản lý mã giảm giá
+- ✅ Component `AdminSidebar.tsx` - Navigation menu
+- ✅ Route `/admin` đã được thêm vào `routes/index.tsx`
+- ✅ Client-side protection (check role='admin' trong component)
+- ✅ Hooks: `useAdmin`, `useAdminBooks`, `useAdminOrders`, `useAdminGenres`, `useAdminAuthors`, `useAdminPublishers`, `useAdminPromos`
 
-**Ảnh hưởng:** Admin không thể quản lý hệ thống qua UI, phải dùng Postman hoặc tools khác.
+**Trạng thái:** ✅ **HOÀN THÀNH** - Admin có thể quản lý toàn bộ hệ thống qua UI.
 
-**Độ ưu tiên:** 🔴 **RẤT CAO** - Cần thiết để vận hành hệ thống.
+**Lưu ý:** ⚠️ Chưa có ProtectedRoute component riêng, nhưng đã có client-side check trong AdminPage.
 
 ---
 
 ## ⚠️ CÁC TÍNH NĂNG CẦN CẢI THIỆN
 
-### 6. **Review System Enhancement** 🟡
+### 6. **Review System Enhancement** ⚠️ **CÓ MỘT PHẦN**
 
 **Backend:** ✅ **CÓ CƠ BẢN**
 - ✅ API `POST /api/reviews` - Tạo review
@@ -148,12 +156,15 @@ Dự án đã có nền tảng vững chắc với các tính năng core đã đ
 
 **Frontend:** ⚠️ **CÓ MỘT PHẦN**
 - ✅ Component `BookReviews` hiển thị reviews
-- ❌ **THIẾU** Form tạo review trên `BookDetailPage`
+- ✅ Component `ReviewModal.tsx` - Form tạo review với star rating
+- ✅ ReviewModal được tích hợp trong `MyOrdersPage.tsx` để tạo review sau khi mua
+- ✅ Component `dialog.tsx` đã được tạo (Radix UI Dialog)
+- ❌ **THIẾU** Form tạo review trực tiếp trên `BookDetailPage`
 - ❌ **THIẾU** Chức năng edit/delete review của chính user
 - ❌ **THIẾU** Phân trang reviews
 - ❌ **THIẾU** Filter reviews theo rating
 
-**Độ ưu tiên:** 🟡 **TRUNG BÌNH** - Cải thiện UX.
+**Độ ưu tiên:** 🟡 **TRUNG BÌNH** - Cải thiện UX. Đã có cơ bản, cần bổ sung edit/delete và phân trang.
 
 ---
 
@@ -217,11 +228,11 @@ Dự án đã có nền tảng vững chắc với các tính năng core đã đ
 
 ### 🔴 **ƯU TIÊN CAO** (Cần làm ngay)
 
-1. **Wishlist UI** - Backend đã xong, chỉ cần frontend
-2. **Search & Filter UI** - Backend đã xong, chỉ cần frontend
-3. **User Profile Page** - Cần cả backend API và frontend
-4. **Order History Page** - Backend đã xong, chỉ cần frontend
-5. **Admin Dashboard** - Backend đã xong, cần xây dựng toàn bộ frontend
+1. **Wishlist UI** - Backend đã xong, chỉ cần frontend ⚠️ **ĐANG THIẾU**
+2. **Search & Filter UI** - Backend đã xong, chỉ cần frontend ⚠️ **ĐANG THIẾU**
+3. ~~**User Profile Page**~~ - ✅ **ĐÃ HOÀN THÀNH**
+4. ~~**Order History Page**~~ - ✅ **ĐÃ HOÀN THÀNH**
+5. ~~**Admin Dashboard**~~ - ✅ **ĐÃ HOÀN THÀNH**
 
 ### 🟡 **ƯU TIÊN TRUNG BÌNH** (Có thể làm sau)
 
@@ -236,29 +247,30 @@ Dự án đã có nền tảng vững chắc với các tính năng core đã đ
 ## 📊 THỐNG KÊ
 
 ### Backend
-- ✅ **Đã hoàn thành:** ~85%
-- ⚠️ **Cần bổ sung:** User profile APIs, Review edit/delete APIs
-- ❌ **Chưa có:** Payment gateway integration
+- ✅ **Đã hoàn thành:** ~90%
+- ⚠️ **Cần bổ sung:** Review edit/delete APIs
+- ❌ **Chưa có:** Payment gateway integration (VNPay đã có nhưng chưa tích hợp đầy đủ)
 
 ### Frontend
-- ✅ **Đã hoàn thành:** ~60%
-- ❌ **Thiếu hoàn toàn:** Wishlist UI, Search/Filter UI, Profile, Order History, Admin Dashboard
-- ⚠️ **Cần cải thiện:** Review form, Protected routes, Search input logic
+- ✅ **Đã hoàn thành:** ~75%
+- ✅ **Đã hoàn thành:** Profile Page, Order History, Admin Dashboard, Review Modal
+- ❌ **Thiếu hoàn toàn:** Wishlist UI, Search/Filter UI
+- ⚠️ **Cần cải thiện:** Review edit/delete, Protected routes, Search input logic
 
 ### Tổng thể
-- **Mức độ hoàn thiện:** ~70%
-- **Gap chính:** Frontend chưa implement nhiều tính năng mà backend đã có
+- **Mức độ hoàn thiện:** ~82%
+- **Gap chính:** Còn thiếu Wishlist UI và Search/Filter UI - hai tính năng quan trọng cho user experience
 
 ---
 
 ## 🎯 KHUYẾN NGHỊ
 
-### Phase 1: Hoàn thiện Core Features (2-3 tuần)
-1. ✅ Wishlist UI (1-2 ngày)
-2. ✅ Search & Filter UI (3-4 ngày)
-3. ✅ User Profile Page + Backend APIs (2-3 ngày)
-4. ✅ Order History Page (2-3 ngày)
-5. ✅ Admin Dashboard cơ bản (5-7 ngày)
+### Phase 1: Hoàn thiện Core Features (Đã hoàn thành ~80%)
+1. ⚠️ **Wishlist UI** (1-2 ngày) - ⚠️ **CHƯA LÀM**
+2. ⚠️ **Search & Filter UI** (3-4 ngày) - ⚠️ **CHƯA LÀM**
+3. ✅ User Profile Page + Backend APIs (2-3 ngày) - ✅ **ĐÃ HOÀN THÀNH**
+4. ✅ Order History Page (2-3 ngày) - ✅ **ĐÃ HOÀN THÀNH**
+5. ✅ Admin Dashboard cơ bản (5-7 ngày) - ✅ **ĐÃ HOÀN THÀNH**
 
 ### Phase 2: Cải thiện & Tối ưu (1-2 tuần)
 1. Review System Enhancement
@@ -272,8 +284,25 @@ Dự án đã có nền tảng vững chắc với các tính năng core đã đ
 
 - Tất cả các tính năng backend đã được test và hoạt động tốt (theo API_DOCUMENTATION.md)
 - Frontend có UI đẹp và responsive với Tailwind CSS
-- Cần tập trung vào việc kết nối frontend với các APIs đã có
-- Admin Dashboard là ưu tiên cao nhất vì cần thiết để vận hành hệ thống
+- Đã hoàn thành nhiều tính năng quan trọng: Profile, Order History, Admin Dashboard
+- Còn thiếu 2 tính năng chính: **Wishlist UI** và **Search & Filter UI**
+- Component `dialog.tsx` đã được tạo để hỗ trợ ReviewModal và các modal khác
+- Admin Dashboard đã hoàn chỉnh với đầy đủ các tabs quản lý
+
+## 🎉 TIẾN ĐỘ GẦN ĐÂY
+
+### ✅ Đã hoàn thành (2025-01-XX):
+- User Profile Page với update profile và change password
+- Order History Page với timeline và review modal
+- Admin Dashboard đầy đủ với 8 tabs quản lý
+- Review Modal component với star rating
+- Dialog UI component (Radix UI)
+
+### ⚠️ Cần hoàn thiện:
+- Wishlist UI (backend đã sẵn sàng)
+- Search & Filter UI (backend đã sẵn sàng)
+- Review edit/delete APIs và UI
+- Protected Routes component
 
 ---
 
