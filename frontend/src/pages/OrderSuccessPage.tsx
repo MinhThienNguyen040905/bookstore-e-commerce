@@ -2,10 +2,11 @@
 import { Header } from '@/layouts/Header';
 import { Footer } from '@/layouts/Footer';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Package, Truck, Clock, Home } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { CheckCircle2, Package, Truck, Clock, Home, AlertTriangle } from 'lucide-react';
+import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useAuthStore } from '@/features/auth/useAuthStore';
+import { useEffect } from 'react';
 
 interface OrderData {
     order_id: number;
@@ -28,11 +29,25 @@ interface OrderData {
 
 export default function OrderSuccessPage() {
     const { state } = useLocation();
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const order: OrderData | null = state?.order || null;
     const { user } = useAuthStore();
 
-    // Nếu không có dữ liệu đơn hàng → redirect về home
-    if (!order) {
+    // VNPay redirect handling
+    const vnpayCode = searchParams.get('code');
+    const vnpayOrderId = searchParams.get('orderId');
+    const vnpayTransactionNo = searchParams.get('transactionNo');
+
+    useEffect(() => {
+        // Nếu có code từ VNPay mà không phải '00' -> redirect đến failure page
+        if (vnpayCode && vnpayCode !== '00') {
+            navigate(`/order-failure?code=${vnpayCode}&orderId=${vnpayOrderId || ''}`);
+        }
+    }, [vnpayCode, vnpayOrderId, navigate]);
+
+    // Nếu không có dữ liệu đơn hàng và không có vnpayCode → redirect về home
+    if (!order && !vnpayCode) {
         return (
             <>
                 <Header />
@@ -89,8 +104,14 @@ export default function OrderSuccessPage() {
                             Cảm ơn <strong>{user?.name || 'bạn'}</strong> đã tin tưởng B-World
                         </p>
                         <p className="text-sm text-muted-foreground mt-2">
-                            Mã đơn hàng của bạn: <span className="font-bold text-purple-600">#{order.order_id}</span>
+                            Mã đơn hàng của bạn: <span className="font-bold text-purple-600">#{vnpayOrderId || order?.order_id}</span>
                         </p>
+                        {vnpayCode === '00' && vnpayTransactionNo && (
+                            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm">
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>Thanh toán VNPay thành công • Mã GD: {vnpayTransactionNo}</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid lg:grid-cols-3 gap-8">
@@ -199,7 +220,7 @@ export default function OrderSuccessPage() {
 
                                 <div className="mt-6 space-y-3">
                                     <Button asChild size="lg" className="w-full">
-                                        <Link to="/orders">
+                                        <Link to="/my-orders">
                                             <Clock className="w-4 h-4 mr-2" />
                                             Xem lịch sử đơn hàng
                                         </Link>
