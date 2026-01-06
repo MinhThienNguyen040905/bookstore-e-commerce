@@ -23,3 +23,24 @@ export const adminAuth = (req, res, next) => {
     if (req.user.role !== 'admin') return res.status(403).json({ msg: 'Admin access required' });
     next();
 };
+
+export const optionalAuth = async (req, res, next) => {
+    const authHeader = req.header('Authorization') || req.header('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+        return next(); // Không có token => Khách vãng lai, cho qua luôn
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findByPk(decoded.user_id);
+        if (user) {
+            req.user = decoded; // Token hợp lệ => Lưu info user
+        }
+        next();
+    } catch (err) {
+        // Token lỗi/hết hạn => Coi như chưa đăng nhập, không báo lỗi
+        next();
+    }
+};
