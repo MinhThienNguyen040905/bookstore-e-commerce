@@ -5,6 +5,8 @@ import { BookCard } from '@/components/book/BookCard';
 import { useNewReleasesBooks, useTopRatedBooks } from '@/hooks/useBooks';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 
 export default function Home() {
     // Chúng ta sử dụng Top Rated làm Bestsellers
@@ -34,9 +36,11 @@ export default function Home() {
                                     Thousands of books at your fingertips
                                 </p>
                             </div>
-                            <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 px-8 bg-[#00796B] text-white text-base font-bold tracking-wide hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 shadow-lg border-none">
-                                Shop Now
-                            </button>
+                            <Link to="/shop"> {/* Đổi href="#" thành Link to="/shop" */}
+                                <Button size="lg" className="bg-[#008080] hover:bg-[#006666] text-white font-bold px-8 py-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                                    Shop Now <ArrowRight className="ml-2 w-5 h-5" />
+                                </Button>
+                            </Link>
                         </div>
                     </div>
                 </section>
