@@ -1,4 +1,3 @@
-// src/pages/ShopPage.tsx
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Header } from '@/layouts/Header';
@@ -6,9 +5,10 @@ import { Footer } from '@/layouts/Footer';
 import { ShopSidebar } from '@/components/shop/ShopSidebar';
 import { useShopBooks } from '@/hooks/useShop';
 import { Button } from '@/components/ui/button';
-import { Filter, ShoppingCart, Heart, ChevronLeft, ChevronRight, Loader2, Star } from 'lucide-react';
+import { BookCard } from '@/components/book/BookCard'; // Import BookCard
+import { Filter, ChevronLeft, ChevronRight, ArrowDownUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'; // Tận dụng LoadingSpinner
 
 export default function ShopPage() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -37,13 +37,28 @@ export default function ShopPage() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('sort', e.target.value);
+        newParams.set('page', '1'); // Reset về trang 1 khi sort
+        setSearchParams(newParams);
+    };
+
     return (
-        <div className="font-display bg-[#F8F9FA] text-[#333333] min-h-screen flex flex-col">
+        // Bỏ font-display ở root để đồng bộ font body với Home (dùng font sans mặc định)
+        <div className="bg-[#f5f8f8] text-stone-900 min-h-screen flex flex-col font-sans">
             <Header />
 
             <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
-                <div className="flex flex-col lg:flex-row gap-8">
 
+                {/* Breadcrumbs */}
+                <div className="flex flex-wrap gap-2 text-sm text-stone-500 mb-8">
+                    <Link to="/" className="hover:text-[#008080] transition-colors">Home</Link>
+                    <span>/</span>
+                    <span className="text-stone-900 font-medium">Shop</span>
+                </div>
+
+                <div className="flex flex-col lg:flex-row gap-8">
                     {/* SIDEBAR - DESKTOP */}
                     <aside className="hidden lg:block w-64 xl:w-72 flex-shrink-0">
                         <div className="sticky top-24">
@@ -54,8 +69,11 @@ export default function ShopPage() {
                     {/* MOBILE FILTER DRAWER OVERLAY */}
                     {isMobileFilterOpen && (
                         <div className="fixed inset-0 z-50 flex lg:hidden">
-                            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileFilterOpen(false)}></div>
-                            <div className="relative bg-white w-80 h-full p-6 overflow-y-auto animate-in slide-in-from-left duration-300">
+                            <div
+                                className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                                onClick={() => setIsMobileFilterOpen(false)}
+                            ></div>
+                            <div className="relative bg-white w-80 h-full p-6 overflow-y-auto animate-in slide-in-from-left duration-300 shadow-2xl">
                                 <ShopSidebar onClose={() => setIsMobileFilterOpen(false)} />
                             </div>
                         </div>
@@ -63,122 +81,107 @@ export default function ShopPage() {
 
                     {/* MAIN CONTENT */}
                     <div className="flex-1">
-
-                        {/* Breadcrumbs & Mobile Filter Toggle */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                            <div className="flex flex-wrap gap-2 text-sm text-stone-500">
-                                <Link to="/" className="hover:text-[#008080]">Home</Link>
-                                <span>/</span>
-                                <span className="text-stone-900 font-medium">Shop</span>
+                        {/* Header Area: Title & Toolbar */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
+                            <div>
+                                {/* Sử dụng font-display cho Heading để giống Home */}
+                                <h2 className="text-4xl font-bold font-display text-stone-900 tracking-tight">
+                                    Explore Books
+                                </h2>
+                                <p className="text-stone-500 text-sm mt-2">
+                                    Showing <span className="font-medium text-stone-900">{books.length}</span> of <span className="font-medium text-stone-900">{pagination?.totalItems || 0}</span> results
+                                </p>
                             </div>
 
-                            <Button
-                                variant="outline"
-                                className="lg:hidden gap-2 border-stone-300 text-stone-700"
-                                onClick={() => setIsMobileFilterOpen(true)}
-                            >
-                                <Filter className="w-4 h-4" /> Filters
-                            </Button>
+                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                <Button
+                                    variant="outline"
+                                    className="lg:hidden gap-2 border-stone-300 text-stone-700 flex-1"
+                                    onClick={() => setIsMobileFilterOpen(true)}
+                                >
+                                    <Filter className="w-4 h-4" /> Filters
+                                </Button>
+
+                                {/* Sort Dropdown */}
+                                <div className="relative flex-1 sm:flex-none">
+                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                        <ArrowDownUp className="h-4 w-4 text-stone-400" />
+                                    </div>
+                                    <select
+                                        className="h-10 pl-10 pr-4 py-2 w-full sm:w-[180px] rounded-md border border-stone-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#0df2d7] focus:border-transparent cursor-pointer appearance-none"
+                                        value={params.sort}
+                                        onChange={handleSortChange}
+                                    >
+                                        <option value="">Default Sorting</option>
+                                        <option value="price_asc">Price: Low to High</option>
+                                        <option value="price_desc">Price: High to Low</option>
+                                        <option value="newest">Newest Arrivals</option>
+                                        <option value="rating">Top Rated</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Headline */}
-                        <div className="mb-6">
-                            <h2 className="text-4xl font-bold font-heading text-stone-900 tracking-tight">Explore Books</h2>
-                            <p className="text-stone-500 text-sm mt-2">
-                                Showing {books.length} of {pagination?.total || 0} results
-                            </p>
-                        </div>
-
-                        {/* LOADING STATE */}
+                        {/* CONTENT AREA */}
                         {isLoading ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {[...Array(6)].map((_, i) => (
-                                    <div key={i} className="h-96 bg-stone-200 animate-pulse rounded-lg"></div>
-                                ))}
+                            <div className="py-20">
+                                <LoadingSpinner />
                             </div>
                         ) : (
                             <>
-                                {/* PRODUCT GRID */}
+                                {/* PRODUCT GRID - Sử dụng BookCard component */}
                                 {books.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
                                         {books.map((book: any) => (
-                                            <div key={book.book_id} className="flex flex-col bg-white rounded-lg overflow-hidden shadow-sm border border-stone-200 group hover:shadow-md transition-shadow">
-                                                <div className="relative overflow-hidden aspect-[2/3]">
-                                                    <img
-                                                        src={book.cover_image}
-                                                        alt={book.title}
-                                                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                    />
-                                                    <button className="absolute top-3 right-3 h-8 w-8 flex items-center justify-center rounded-full bg-white/80 text-stone-600 hover:text-[#D9534F] transition-colors">
-                                                        <Heart className="w-5 h-5" />
-                                                    </button>
-                                                </div>
-
-                                                <div className="p-4 flex flex-col flex-grow">
-                                                    <Link to={`/book/${book.book_id}`}>
-                                                        <h3 className="text-lg font-bold font-heading leading-tight mb-1 line-clamp-2 hover:text-[#008080] transition-colors">
-                                                            {book.title}
-                                                        </h3>
-                                                    </Link>
-                                                    <p className="text-sm text-stone-500 mb-2">{book.authors}</p>
-
-                                                    {/* Rating Star */}
-                                                    <div className="flex items-center text-yellow-500 mb-3">
-                                                        <Star className="w-4 h-4 fill-current" />
-                                                        <span className="text-sm text-stone-500 ml-1 font-medium">{book.avg_rating}</span>
-                                                    </div>
-
-                                                    <div className="flex items-baseline gap-2 mt-auto">
-                                                        <span className="text-xl font-bold text-[#D9534F]">
-                                                            ${book.price.toLocaleString('en-US')}
-                                                        </span>
-                                                    </div>
-
-                                                    <Button className="mt-4 w-full bg-[#008080] text-white font-bold hover:bg-[#006666]">
-                                                        <ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart
-                                                    </Button>
-                                                </div>
+                                            <div key={book.book_id} className="h-full">
+                                                {/* Truyền props book vào component BookCard */}
+                                                <BookCard book={book} className="h-full hover:-translate-y-1 transition-transform duration-300" />
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-20 bg-white rounded-xl border border-stone-200">
-                                        <p className="text-stone-500 text-lg">No books found matching your filters.</p>
+                                    <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-dashed border-stone-300">
+                                        <div className="p-4 bg-stone-50 rounded-full mb-4">
+                                            <Filter className="w-8 h-8 text-stone-300" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-stone-900 mb-1">No books found</h3>
+                                        <p className="text-stone-500 text-sm mb-6">Try adjusting your filters or search keyword.</p>
                                         <Button
-                                            variant="link"
+                                            variant="outline"
                                             onClick={() => setSearchParams({})}
-                                            className="text-[#008080] mt-2"
+                                            className="border-[#008080] text-[#008080] hover:bg-[#008080]/10 font-bold"
                                         >
-                                            Clear all filters
+                                            Clear All Filters
                                         </Button>
                                     </div>
                                 )}
 
                                 {/* PAGINATION */}
                                 {pagination && pagination.totalPages > 1 && (
-                                    <nav className="flex items-center justify-center pt-10 mt-6 border-t border-stone-200">
-                                        <div className="flex items-center gap-2 text-sm">
+                                    <nav className="flex items-center justify-center pt-12 border-t border-stone-200 mt-12">
+                                        <div className="flex items-center gap-2">
                                             <Button
-                                                variant="outline" size="icon"
+                                                variant="outline"
+                                                size="icon"
                                                 onClick={() => handlePageChange(params.page - 1)}
                                                 disabled={params.page === 1}
-                                                className="h-9 w-9 border-stone-300"
+                                                className="h-10 w-10 border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-900 rounded-full"
                                             >
-                                                <ChevronLeft className="w-4 h-4" />
+                                                <ChevronLeft className="w-5 h-5" />
                                             </Button>
 
-                                            {/* Simple Page Indicator */}
-                                            <span className="px-4 font-medium text-stone-700">
-                                                Page {params.page} of {pagination.totalPages}
-                                            </span>
+                                            <div className="flex items-center px-4 font-medium text-stone-600 text-sm">
+                                                Page <span className="mx-1 font-bold text-stone-900">{params.page}</span> of {pagination.totalPages}
+                                            </div>
 
                                             <Button
-                                                variant="outline" size="icon"
+                                                variant="outline"
+                                                size="icon"
                                                 onClick={() => handlePageChange(params.page + 1)}
                                                 disabled={params.page === pagination.totalPages}
-                                                className="h-9 w-9 border-stone-300"
+                                                className="h-10 w-10 border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-stone-900 rounded-full"
                                             >
-                                                <ChevronRight className="w-4 h-4" />
+                                                <ChevronRight className="w-5 h-5" />
                                             </Button>
                                         </div>
                                     </nav>
@@ -188,7 +191,6 @@ export default function ShopPage() {
                     </div>
                 </div>
             </main>
-
             <Footer />
         </div>
     );
