@@ -1,3 +1,4 @@
+// src/pages/ShopPage.tsx
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Header } from '@/layouts/Header';
@@ -5,16 +6,15 @@ import { Footer } from '@/layouts/Footer';
 import { ShopSidebar } from '@/components/shop/ShopSidebar';
 import { useShopBooks } from '@/hooks/useShop';
 import { Button } from '@/components/ui/button';
-import { BookCard } from '@/components/book/BookCard'; // Import BookCard
+import { BookCard } from '@/components/book/BookCard';
 import { Filter, ChevronLeft, ChevronRight, ArrowDownUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner'; // Tận dụng LoadingSpinner
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import type { CardBook } from '@/types/book'; // Import type
 
 export default function ShopPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-    // Parse params từ URL
     const params = {
         page: Number(searchParams.get('page')) || 1,
         limit: 12,
@@ -27,8 +27,12 @@ export default function ShopPage() {
         rating: Number(searchParams.get('rating')) || undefined,
     };
 
+    // TypeScript bây giờ đã hiểu data là ShopResponse hoặc undefined
     const { data, isLoading } = useShopBooks(params);
-    const { books = [], pagination } = data || {};
+
+    // Destructure an toàn với default values
+    const books = data?.books || [];
+    const pagination = data?.pagination || { totalItems: 0, totalPages: 1, currentPage: 1, pageSize: 12 };
 
     const handlePageChange = (newPage: number) => {
         const newParams = new URLSearchParams(searchParams);
@@ -40,12 +44,11 @@ export default function ShopPage() {
     const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newParams = new URLSearchParams(searchParams);
         newParams.set('sort', e.target.value);
-        newParams.set('page', '1'); // Reset về trang 1 khi sort
+        newParams.set('page', '1');
         setSearchParams(newParams);
     };
 
     return (
-        // Bỏ font-display ở root để đồng bộ font body với Home (dùng font sans mặc định)
         <div className="bg-[#f5f8f8] text-stone-900 min-h-screen flex flex-col font-sans">
             <Header />
 
@@ -66,7 +69,7 @@ export default function ShopPage() {
                         </div>
                     </aside>
 
-                    {/* MOBILE FILTER DRAWER OVERLAY */}
+                    {/* MOBILE FILTER DRAWER */}
                     {isMobileFilterOpen && (
                         <div className="fixed inset-0 z-50 flex lg:hidden">
                             <div
@@ -81,15 +84,14 @@ export default function ShopPage() {
 
                     {/* MAIN CONTENT */}
                     <div className="flex-1">
-                        {/* Header Area: Title & Toolbar */}
+                        {/* Header Area */}
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
                             <div>
-                                {/* Sử dụng font-display cho Heading để giống Home */}
                                 <h2 className="text-4xl font-bold font-display text-stone-900 tracking-tight">
                                     Explore Books
                                 </h2>
                                 <p className="text-stone-500 text-sm mt-2">
-                                    Showing <span className="font-medium text-stone-900">{books.length}</span> of <span className="font-medium text-stone-900">{pagination?.totalItems || 0}</span> results
+                                    Showing <span className="font-medium text-stone-900">{books.length}</span> of <span className="font-medium text-stone-900">{pagination.totalItems}</span> results
                                 </p>
                             </div>
 
@@ -129,12 +131,12 @@ export default function ShopPage() {
                             </div>
                         ) : (
                             <>
-                                {/* PRODUCT GRID - Sử dụng BookCard component */}
+                                {/* PRODUCT GRID */}
                                 {books.length > 0 ? (
                                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
-                                        {books.map((book: any) => (
+                                        {/* Bỏ 'any', dùng đúng type CardBook */}
+                                        {books.map((book: CardBook) => (
                                             <div key={book.book_id} className="h-full">
-                                                {/* Truyền props book vào component BookCard */}
                                                 <BookCard book={book} className="h-full hover:-translate-y-1 transition-transform duration-300" />
                                             </div>
                                         ))}
@@ -157,7 +159,7 @@ export default function ShopPage() {
                                 )}
 
                                 {/* PAGINATION */}
-                                {pagination && pagination.totalPages > 1 && (
+                                {pagination.totalPages > 1 && (
                                     <nav className="flex items-center justify-center pt-12 border-t border-stone-200 mt-12">
                                         <div className="flex items-center gap-2">
                                             <Button
