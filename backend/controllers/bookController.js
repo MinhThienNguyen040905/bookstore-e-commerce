@@ -7,6 +7,7 @@ import Genre from '../models/Genre.js';
 import Publisher from '../models/Publisher.js';
 import Review from '../models/Review.js';
 import User from '../models/User.js';
+import Wishlist from '../models/Wishlist.js';
 import cloudinary from '../cloudinary.js';
 import multer from 'multer';
 import fs from 'fs';

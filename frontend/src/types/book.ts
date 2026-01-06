@@ -1,7 +1,7 @@
+// src/types/book.ts
 import type { Genre } from "./Genre";
 import type { Review } from "./Review";
 
-// src/types/book.ts
 export interface Book {
     book_id: number;
     title: string;
@@ -16,6 +16,7 @@ export interface Book {
     genres: Genre[];
     avg_rating: number;
     reviews: Review[];
+    is_in_wishlist: boolean; // <--- Trường mới
 }
 
 export interface CardBook {
