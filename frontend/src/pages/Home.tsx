@@ -1,31 +1,51 @@
 // src/pages/Home.tsx
+import { useRef } from 'react';
 import { Header } from '@/layouts/Header';
 import { Footer } from '@/layouts/Footer';
 import { BookCard } from '@/components/book/BookCard';
-import { useNewReleasesBooks, useTopRatedBooks } from '@/hooks/useBooks';
+import { useNewReleasesBooks, useTopRatedBooks } from '@/hooks/useBooks'; // Import cả 2 hooks
+import { useGenres } from '@/hooks/useGenres';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Home() {
-    // Chúng ta sử dụng Top Rated làm Bestsellers
-    const { data: topRatedBooks, isLoading, error } = useTopRatedBooks();
+    // Gọi 2 API riêng biệt
+    const { data: newReleases, isLoading: loadingNew } = useNewReleasesBooks();
+    const { data: topRatedBooks, isLoading: loadingTop } = useTopRatedBooks();
 
-    if (isLoading) return <LoadingSpinner />;
-    if (error) return <p className="text-center py-10">Error loading books</p>;
+    const { data: genres = [], isLoading: loadingGenres } = useGenres();
+    const navigate = useNavigate();
+
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    const scroll = (direction: 'left' | 'right') => {
+        if (scrollRef.current) {
+            const { current } = scrollRef;
+            const scrollAmount = 300;
+            if (direction === 'left') {
+                current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            } else {
+                current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        }
+    };
+
+    if (loadingNew || loadingTop || loadingGenres) return <LoadingSpinner />;
 
     return (
         <>
             <Header />
-            <main className="flex-grow">
-                {/* Hero Section */}
+            <main className="flex-grow bg-[#F8FAFC]">
+
+                {/* --- HERO SECTION --- */}
                 <section className="w-full">
                     <div className="relative w-full">
                         <div
                             className="flex min-h-[60vh] max-h-[720px] flex-col gap-6 bg-cover bg-center bg-no-repeat items-center justify-center p-4 text-center"
                             style={{
-                                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuARVJxaCbY0LfMOPdxEc0FnkYYUb3LvDFfgirnmv8GW9JROUc25enVUlLydSCqV0EBpQzOIiUexS3-qgFSTdEd8VmPb48l6Dw0AVcBkUiWKcXL-KJm5SDmz4lFA18ZSDhdC3kV90z3lw6VdlB0C-IOzazpgat69bRjHbmq-VNrN4tc9wt7-NC0_OmD_ypOFLyrBqHBCH0ay4O-cPr05yR41AHP3IfPRP9-1QtD7A8rEdeI7k0qf2U-X9feYJ5lPLIOtQP91iRXZhQtt")`
+                                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%), url("https://images.unsplash.com/photo-1507842217121-9e93ca041ecc?q=80&w=2070&auto=format&fit=crop")`
                             }}
                         >
                             <div className="flex flex-col gap-4 max-w-4xl">
@@ -36,7 +56,7 @@ export default function Home() {
                                     Thousands of books at your fingertips
                                 </p>
                             </div>
-                            <Link to="/shop"> {/* Đổi href="#" thành Link to="/shop" */}
+                            <Link to="/shop">
                                 <Button size="lg" className="bg-[#008080] hover:bg-[#006666] text-white font-bold px-8 py-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
                                     Shop Now <ArrowRight className="ml-2 w-5 h-5" />
                                 </Button>
@@ -47,13 +67,12 @@ export default function Home() {
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
 
-                    {/* Featured Categories */}
-                    <section className="mb-12 sm:mb-20">
+                    {/* --- FEATURED CATEGORIES --- */}
+                    <section className="mb-12">
                         <h2 className="text-[#2F4F4F] text-3xl font-bold font-display mb-8 px-2">
                             Featured Categories
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-                            {/* Hardcode Category Data cho giống mẫu */}
                             {[
                                 { name: "Fiction", img: "https://images.unsplash.com/photo-1474932430478-367dbb6832c1?auto=format&fit=crop&q=80&w=800" },
                                 { name: "Non-Fiction", img: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800" },
@@ -74,19 +93,87 @@ export default function Home() {
                         </div>
                     </section>
 
-                    {/* Bestsellers (Using Top Rated Books) */}
-                    <section className="mb-12 sm:mb-20">
-                        <h2 className="text-[#2F4F4F] text-3xl font-bold font-display mb-8 px-2">
-                            Bestsellers
-                        </h2>
+                    {/* --- BROWSE ALL GENRES --- */}
+                    <section className="mb-20">
+                        <div className="flex items-center justify-between mb-6 px-2">
+                            <h3 className="text-xl font-bold text-stone-700 font-display">
+                                Browse All Genres
+                            </h3>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => scroll('left')}
+                                    className="p-2 rounded-full border border-stone-200 bg-white hover:bg-[#008080] hover:text-white hover:border-[#008080] transition-colors shadow-sm"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={() => scroll('right')}
+                                    className="p-2 rounded-full border border-stone-200 bg-white hover:bg-[#008080] hover:text-white hover:border-[#008080] transition-colors shadow-sm"
+                                >
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div
+                            ref={scrollRef}
+                            className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth snap-x"
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
+                            {genres.map((genre: any) => (
+                                <div
+                                    key={genre.genre_id}
+                                    onClick={() => navigate(`/genre/${genre.genre_id}`, { state: { title: genre.name } })}
+                                    className="snap-start flex-shrink-0 cursor-pointer group"
+                                >
+                                    <div className="px-6 py-3 bg-white border border-stone-200 rounded-full shadow-sm group-hover:shadow-md group-hover:border-[#008080] group-hover:bg-[#008080]/5 transition-all whitespace-nowrap">
+                                        <span className="font-medium text-stone-600 group-hover:text-[#008080] text-sm">
+                                            {genre.name}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* --- SECTION 1: NEW RELEASES --- */}
+                    <section className="mb-16">
+                        <div className="flex justify-between items-end mb-8 px-2">
+                            <h2 className="text-[#2F4F4F] text-3xl font-bold font-display">
+                                New Releases
+                            </h2>
+                            <Link to="/new-releases" className="text-[#00796B] font-medium hover:underline flex items-center gap-1">
+                                View All <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-                            {topRatedBooks?.slice(0, 10).map((book) => (
+                            {newReleases?.slice(0, 5).map((book) => (
                                 <BookCard key={book.book_id} book={book} />
                             ))}
                         </div>
                     </section>
 
-                    {/* Testimonials */}
+                    {/* --- SECTION 2: TOP RATED --- */}
+                    <section className="mb-20">
+                        <div className="flex justify-between items-end mb-8 px-2">
+                            <h2 className="text-[#2F4F4F] text-3xl font-bold font-display">
+                                Top Rated
+                            </h2>
+                            {/* Link tới trang bestsellers (vì collection 'bestsellers' đang sort theo rating) */}
+                            <Link to="/bestsellers" className="text-[#00796B] font-medium hover:underline flex items-center gap-1">
+                                View All <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+                            {topRatedBooks?.slice(0, 5).map((book) => (
+                                <BookCard key={book.book_id} book={book} />
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* --- TESTIMONIALS --- */}
                     <section className="bg-white rounded-xl p-8 sm:p-12 mb-12 sm:mb-20 shadow-sm border border-gray-100">
                         <h2 className="text-[#2F4F4F] text-3xl font-bold font-display mb-8 text-center">
                             What Our Readers Say
@@ -106,7 +193,7 @@ export default function Home() {
                         </div>
                     </section>
 
-                    {/* Newsletter Signup */}
+                    {/* --- NEWSLETTER --- */}
                     <section className="text-center bg-[#E0F7FA] p-8 sm:p-12 rounded-xl">
                         <h2 className="text-[#2F4F4F] text-3xl font-bold font-display mb-2">Join Our Newsletter</h2>
                         <p className="text-gray-600 mb-6 max-w-2xl mx-auto">

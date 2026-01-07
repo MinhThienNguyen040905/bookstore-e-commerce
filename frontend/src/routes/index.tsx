@@ -36,4 +36,7 @@ export const routes: RouteObject[] = [
     { path: '/bestsellers', element: <CollectionPage type="bestsellers" /> },
     { path: '/deals', element: <CollectionPage type="deals" /> },
     { path: '/children-books', element: <CollectionPage type="children" /> },
+
+    // Route cho thể loại động: /genre/1, /genre/5...
+    { path: '/genre/:id', element: <CollectionPage type="genre" /> },
 ];
