@@ -25,7 +25,7 @@ export default function Home() {
                         <div
                             className="flex min-h-[60vh] max-h-[720px] flex-col gap-6 bg-cover bg-center bg-no-repeat items-center justify-center p-4 text-center"
                             style={{
-                                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%), url("https://images.unsplash.com/photo-1507842217121-9e93ca041ecc?q=80&w=2070&auto=format&fit=crop")`
+                                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuARVJxaCbY0LfMOPdxEc0FnkYYUb3LvDFfgirnmv8GW9JROUc25enVUlLydSCqV0EBpQzOIiUexS3-qgFSTdEd8VmPb48l6Dw0AVcBkUiWKcXL-KJm5SDmz4lFA18ZSDhdC3kV90z3lw6VdlB0C-IOzazpgat69bRjHbmq-VNrN4tc9wt7-NC0_OmD_ypOFLyrBqHBCH0ay4O-cPr05yR41AHP3IfPRP9-1QtD7A8rEdeI7k0qf2U-X9feYJ5lPLIOtQP91iRXZhQtt")`
                             }}
                         >
                             <div className="flex flex-col gap-4 max-w-4xl">
