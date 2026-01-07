@@ -8,6 +8,8 @@ import sequelize from '../config/db.js';
 import { ORDER_STATUS } from '../constants/orderStatus.js';
 import { sendOrderConfirmation } from '../utils/email.js';
 
+const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+
 // Import Models để xử lý tạo đơn tại đây
 import Order from '../models/Order.js';
 import OrderItem from '../models/OrderItem.js';
@@ -154,7 +156,7 @@ const vnpayReturn = async (req, res) => {
         const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
         if (secureHash !== signed) {
-            return res.redirect(`http://localhost:5173/order-failure?code=97&message=Invalid Signature`);
+            return res.redirect(`${clientUrl}/order-failure?code=97&message=Invalid Signature`);
         }
 
         const orderId = vnp_Params['vnp_TxnRef'];
@@ -170,7 +172,7 @@ const vnpayReturn = async (req, res) => {
 
             if (!order) {
                 await transaction.rollback();
-                return res.redirect(`http://localhost:5173/order-failure?code=01&message=Order Not Found`);
+                return res.redirect(`${clientUrl}/order-failure?code=01&message=Order Not Found`);
             }
 
             if (responseCode === '00') {
@@ -194,7 +196,7 @@ const vnpayReturn = async (req, res) => {
                     }
                 } catch (e) { }
 
-                return res.redirect(`http://localhost:5173/order-success?code=00&orderId=${orderId}`);
+                return res.redirect(`${clientUrl}/order-success?code=00&orderId=${orderId}`);
 
             } else {
                 // === THẤT BẠI ===
@@ -214,18 +216,18 @@ const vnpayReturn = async (req, res) => {
                 // 3. KHÔNG XÓA GIỎ HÀNG (để user mua lại)
 
                 await transaction.commit();
-                return res.redirect(`http://localhost:5173/order-failure?code=${responseCode}`);
+                return res.redirect(`${clientUrl}/order-failure?code=${responseCode}`);
             }
 
         } catch (err) {
             if (!transaction.finished) await transaction.rollback();
             console.error(err);
-            return res.redirect(`http://localhost:5173/order-failure?code=99`);
+            return res.redirect(`${clientUrl}/order-failure?code=99`);
         }
 
     } catch (err) {
         console.error(err);
-        return res.redirect(`http://localhost:5173/order-failure?code=99`);
+        return res.redirect(`${clientUrl}/order-failure?code=99`);
     }
 };
 

@@ -14,7 +14,7 @@ const Order = sequelize.define('Order', {
         }
     },
     status: {
-        type: DataTypes.ENUM('processing', 'shipped', 'delivered', 'cancelled'),
+        type: DataTypes.ENUM('pending_payment', 'processing', 'shipped', 'delivered', 'cancelled'),
         defaultValue: 'processing',
         allowNull: false
     },
@@ -24,14 +24,14 @@ const Order = sequelize.define('Order', {
     address: { type: DataTypes.STRING(255), allowNull: true },
     phone: { type: DataTypes.STRING(20), allowNull: true },
     // THÊM CÁC TRƯỜNG CHO VNPAY
-    payment_status: { 
-        type: DataTypes.STRING(50), 
-        allowNull: true, 
+    payment_status: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
         defaultValue: 'pending',
         comment: 'Trạng thái thanh toán: pending, paid, failed'
     },
-    vnpay_transaction_no: { 
-        type: DataTypes.STRING(50), 
+    vnpay_transaction_no: {
+        type: DataTypes.STRING(50),
         allowNull: true,
         comment: 'Mã giao dịch VNPay'
     },

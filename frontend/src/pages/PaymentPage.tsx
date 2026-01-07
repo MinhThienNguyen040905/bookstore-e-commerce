@@ -13,9 +13,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Tag, Truck, CreditCard } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createOrder, type CreateOrderBody } from '@/api/orderApi';
+import { createOrder } from '@/api/orderApi';
 import { useVNPayPayment } from '@/hooks/useVNPayPayment';
 import { useCartStore } from '@/features/cart/useCartStore';
+// IMPORT THÊM CÁC TYPE NÀY
+import type { PromoResponse } from '@/api/orderApi';
+import { AxiosError } from 'axios';
 
 export default function PaymentPage() {
     const navigate = useNavigate();
@@ -25,40 +28,33 @@ export default function PaymentPage() {
     const subtotal = cartData?.total_price || 0;
 
     const [promoCode, setPromoCode] = useState('');
-    const [appliedPromo, setAppliedPromo] = useState<any>(null);
-    const [paymentMethod, setPaymentMethod] = useState<'cash_on_delivery' | 'paypal' | 'credit_card'>('cash_on_delivery');
+
+    // SỬA LỖI ANY 1: Định nghĩa type cho state appliedPromo
+    const [appliedPromo, setAppliedPromo] = useState<PromoResponse | null>(null);
+
+    // State paymentMethod khớp với CreateOrderBody
+    const [paymentMethod, setPaymentMethod] = useState<'COD' | 'VNPay'>('COD');
+
     const [address, setAddress] = useState(user?.address || '');
     const [phone, setPhone] = useState(user?.phone || '');
 
     const checkPromo = useCheckPromo();
     const queryClient = useQueryClient();
     const clearCart = useCartStore((s) => s.clearCart);
+
     const vnpayPayment = useVNPayPayment();
 
-    // Custom mutation để xử lý payment với VNPay
+    // Mutation cho COD
     const createOrderMutation = useMutation({
         mutationFn: createOrder,
         onSuccess: (res) => {
-            const orderId = res.data?.order_id;
-            const totalPrice = finalPrice;
-
-            // Nếu chọn Credit Card (VNPay), redirect đến VNPay
-            if (paymentMethod === 'credit_card' && orderId) {
-                showToast.success('Đơn hàng đã được tạo! Đang chuyển đến cổng thanh toán...');
-                // Gọi VNPay API
-                vnpayPayment.mutate({
-                    orderId: orderId,
-                    amount: totalPrice
-                });
-            } else {
-                // COD hoặc PayPal: navigate trực tiếp đến order success
-                showToast.success(res.message || 'Đặt hàng thành công!');
-                clearCart();
-                queryClient.invalidateQueries({ queryKey: ['cart'] });
-                navigate('/order-success', { state: { order: res.data } });
-            }
+            showToast.success(res.message || 'Đặt hàng thành công!');
+            clearCart();
+            queryClient.invalidateQueries({ queryKey: ['cart'] });
+            navigate('/order-success', { state: { order: res.data } });
         },
-        onError: (err: any) => {
+        // SỬA LỖI ANY 2: Định nghĩa type cho error
+        onError: (err: AxiosError<{ message: string }>) => {
             showToast.error(err.response?.data?.message || 'Đặt hàng thất bại');
         },
     });
@@ -86,7 +82,7 @@ export default function PaymentPage() {
         if (!promoCode.trim()) return showToast.error('Vui lòng nhập mã khuyến mãi');
         checkPromo.mutate(
             { code: promoCode, total_price: subtotal },
-            { onSuccess: (data) => setAppliedPromo(data) }
+            { onSuccess: (data) => setAppliedPromo(data) } // data ở đây đã được TS hiểu là PromoResponse
         );
     };
 
@@ -94,19 +90,28 @@ export default function PaymentPage() {
         if (!address.trim() || !phone.trim()) {
             return showToast.error('Vui lòng nhập địa chỉ và số điện thoại');
         }
-        createOrderMutation.mutate({
-            promo_code: appliedPromo?.code,
-            payment_method: paymentMethod,
-            address,
-            phone,
-        });
+
+        if (paymentMethod === 'COD') {
+            createOrderMutation.mutate({
+                promo_code: appliedPromo?.code,
+                payment_method: 'COD', // Bây giờ TS đã chấp nhận giá trị 'COD'
+                address,
+                phone,
+            });
+        } else if (paymentMethod === 'VNPay') {
+            vnpayPayment.mutate({
+                amount: finalPrice,
+                address,
+                phone,
+                promo_code: appliedPromo?.code
+            });
+        }
     };
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f5f8f8]">
             <Header />
             <main className="container mx-auto px-4 py-8 sm:py-12 flex-1">
-
                 <div className="flex flex-col gap-6">
                     {/* Breadcrumbs */}
                     <div className="flex flex-wrap gap-2 text-sm mb-2">
@@ -165,21 +170,34 @@ export default function PaymentPage() {
                                 <h2 className="text-xl font-bold font-display text-stone-900 mb-6 flex items-center gap-2">
                                     <CreditCard className="w-5 h-5 text-[#00bbb6]" /> Payment Method
                                 </h2>
-                                <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)} className="space-y-4">
+                                <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as 'COD' | 'VNPay')} className="space-y-4">
 
-                                    <div className={`flex items-center space-x-4 border rounded-lg p-4 cursor-pointer transition-colors ${paymentMethod === 'cash_on_delivery' ? 'border-[#0df2d7] bg-[#f0fdfd]' : 'border-stone-200 hover:bg-stone-50'}`}>
-                                        <RadioGroupItem value="cash_on_delivery" id="cod" className="text-[#0df2d7] border-stone-400" />
-                                        <Label htmlFor="cod" className="flex-1 cursor-pointer font-medium text-stone-900">Cash on Delivery (COD)</Label>
+                                    {/* Option 1: COD */}
+                                    <div
+                                        className={`flex items-center space-x-4 border rounded-lg p-4 cursor-pointer transition-colors ${paymentMethod === 'COD' ? 'border-[#0df2d7] bg-[#f0fdfd]' : 'border-stone-200 hover:bg-stone-50'
+                                            }`}
+                                        onClick={() => setPaymentMethod('COD')}
+                                    >
+                                        <RadioGroupItem value="COD" id="cod" className="text-[#0df2d7] border-stone-400" />
+                                        <Label htmlFor="cod" className="flex-1 cursor-pointer font-medium text-stone-900 flex items-center gap-2">
+                                            <Truck className="w-5 h-5 text-stone-500" />
+                                            Cash on Delivery (COD)
+                                        </Label>
                                     </div>
 
-                                    <div className={`flex items-center space-x-4 border rounded-lg p-4 cursor-pointer transition-colors ${paymentMethod === 'paypal' ? 'border-[#0df2d7] bg-[#f0fdfd]' : 'border-stone-200 hover:bg-stone-50'}`}>
-                                        <RadioGroupItem value="paypal" id="paypal" className="text-[#0df2d7] border-stone-400" />
-                                        <Label htmlFor="paypal" className="flex-1 cursor-pointer font-medium text-stone-900">PayPal</Label>
-                                    </div>
-
-                                    <div className={`flex items-center space-x-4 border rounded-lg p-4 cursor-pointer transition-colors ${paymentMethod === 'credit_card' ? 'border-[#0df2d7] bg-[#f0fdfd]' : 'border-stone-200 hover:bg-stone-50'}`}>
-                                        <RadioGroupItem value="credit_card" id="card" className="text-[#0df2d7] border-stone-400" />
-                                        <Label htmlFor="card" className="flex-1 cursor-pointer font-medium text-stone-900">Credit Card / Debit Card</Label>
+                                    {/* Option 2: VNPay */}
+                                    <div
+                                        className={`flex items-center space-x-4 border rounded-lg p-4 cursor-pointer transition-colors ${paymentMethod === 'VNPay' ? 'border-[#0df2d7] bg-[#f0fdfd]' : 'border-stone-200 hover:bg-stone-50'
+                                            }`}
+                                        onClick={() => setPaymentMethod('VNPay')}
+                                    >
+                                        <RadioGroupItem value="VNPay" id="vnpay" className="text-[#0df2d7] border-stone-400" />
+                                        <Label htmlFor="vnpay" className="flex-1 cursor-pointer font-medium text-stone-900 flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded overflow-hidden flex items-center justify-center bg-white border border-stone-100">
+                                                <img src="https://vnpay.vn/assets/images/logo-icon/logo-primary.svg" alt="VNPay" className="w-full h-full object-contain" />
+                                            </div>
+                                            Thanh toán qua VNPay (ATM / QR Code)
+                                        </Label>
                                     </div>
 
                                 </RadioGroup>
@@ -263,7 +281,10 @@ export default function PaymentPage() {
                                     disabled={createOrderMutation.isPending || vnpayPayment.isPending}
                                     className="w-full h-12 bg-[#0df2d7] hover:bg-[#00dcc3] text-stone-900 font-bold text-base tracking-wide rounded-lg shadow-sm"
                                 >
-                                    {createOrderMutation.isPending || vnpayPayment.isPending ? 'Processing...' : 'Place Order'}
+                                    {createOrderMutation.isPending || vnpayPayment.isPending
+                                        ? 'Processing...'
+                                        : (paymentMethod === 'VNPay' ? 'Pay with VNPay' : 'Place Order (COD)')
+                                    }
                                 </Button>
 
                                 <p className="text-xs text-center text-stone-500">
@@ -271,7 +292,6 @@ export default function PaymentPage() {
                                 </p>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </main>

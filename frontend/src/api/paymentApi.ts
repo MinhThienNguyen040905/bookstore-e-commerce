@@ -1,9 +1,10 @@
-// src/api/paymentApi.ts
 import api from './axios';
 
 export interface CreatePaymentUrlBody {
-    orderId: number;
     amount: number;
+    address: string;
+    phone: string;
+    promo_code?: string;
 }
 
 export interface CreatePaymentUrlResponse {
@@ -12,11 +13,11 @@ export interface CreatePaymentUrlResponse {
 
 /**
  * Tạo URL thanh toán VNPay
- * @param body - Object chứa orderId và amount
- * @returns Object chứa paymentUrl để redirect
  */
 export const createVNPayPaymentUrl = async (body: CreatePaymentUrlBody) => {
+    // Interceptor đã xử lý trả về data nằm trong response.data
     const { data } = await api.post<{ success: boolean; data: CreatePaymentUrlResponse }>('/payment/create_payment_url', body);
-    return data.data; // Trả về { paymentUrl: "..." }
-};
 
+    // SỬA LẠI: Trả về data trực tiếp, không gọi data.data nữa
+    return data;
+};
