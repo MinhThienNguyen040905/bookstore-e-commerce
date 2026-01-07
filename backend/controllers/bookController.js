@@ -7,6 +7,7 @@ import Genre from '../models/Genre.js';
 import Publisher from '../models/Publisher.js';
 import Review from '../models/Review.js';
 import User from '../models/User.js';
+import Wishlist from '../models/Wishlist.js';
 import cloudinary from '../cloudinary.js';
 import multer from 'multer';
 import fs from 'fs';
@@ -336,7 +337,7 @@ const getTopRatedBooks = async (req, res) => {
     }
 };
 
-// === GET BOOK BY ID ===
+// === GET BOOK BY ID (Đã chỉnh sửa) ===
 const getBookById = async (req, res) => {
     const { id } = req.params;
     try {
@@ -358,6 +359,22 @@ const getBookById = async (req, res) => {
 
         if (!book) return res.error('Sách không tồn tại', 404);
 
+        // --- LOGIC MỚI: CHECK WISHLIST ---
+        let is_in_wishlist = false;
+
+        // Nếu optionalAuth đã tìm thấy user từ token
+        if (req.user && req.user.user_id) {
+            const wishlistEntry = await Wishlist.findOne({
+                where: {
+                    user_id: req.user.user_id,
+                    book_id: id
+                }
+            });
+            // Nếu tìm thấy bản ghi => true, ngược lại false
+            is_in_wishlist = !!wishlistEntry;
+        }
+        // ---------------------------------
+
         const avgResult = await Review.findOne({
             where: { book_id: id },
             attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'avg_rating']],
@@ -365,7 +382,7 @@ const getBookById = async (req, res) => {
         });
 
         const avgRating = avgResult?.avg_rating
-            ? parseFloat(avgResult.avg_rating) // ← ÉP KIỂU CHÍNH XÁC
+            ? parseFloat(avgResult.avg_rating)
             : 0;
 
         const result = {
@@ -381,6 +398,9 @@ const getBookById = async (req, res) => {
             authors: book.Authors?.map(a => a.name).join(', '),
             genres: book.Genres,
             avg_rating: Number(avgRating.toFixed(1)),
+
+            is_in_wishlist, // <--- TRẢ VỀ TRƯỜNG MỚI TẠI ĐÂY
+
             reviews: book.Reviews?.map(r => ({
                 review_id: r.review_id,
                 rating: r.rating,
@@ -396,10 +416,10 @@ const getBookById = async (req, res) => {
 
         res.success(result, 'Lấy thông tin sách thành công');
     } catch (err) {
+        console.error(err);
         res.error('Lỗi server', 500);
     }
 };
-
 // === UPDATE BOOK ===
 const updateBook = async (req, res) => {
     const { id } = req.params;
