@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ProfileSidebar } from '@/components/profile/ProfileSidebar';
 import { ProfileTab } from '@/components/profile/tabs/ProfileTab';
 import { OrdersTab } from '@/components/profile/tabs/OrdersTab';
+import { WishlistTab } from '@/components/profile/tabs/WishlistTab';
 
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'wishlist' | 'address' | 'payment'>('profile');
@@ -42,9 +43,10 @@ export default function ProfilePage() {
                             {activeTab === 'profile' && <ProfileTab />}
 
                             {activeTab === 'orders' && <OrdersTab />}
+                            {activeTab === 'wishlist' && <WishlistTab />}
 
                             {/* Placeholder for other tabs */}
-                            {['wishlist', 'address', 'payment'].includes(activeTab) && (
+                            {['address', 'payment'].includes(activeTab) && (
                                 <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-12 text-center animate-in fade-in zoom-in-95 duration-300">
                                     <p className="text-stone-500">Content for <strong>{activeTab}</strong> is coming soon!</p>
                                     <Button onClick={() => setActiveTab('profile')} className="mt-4 bg-[#0df2d7] text-stone-900 font-bold hover:bg-[#00dcc3]">
