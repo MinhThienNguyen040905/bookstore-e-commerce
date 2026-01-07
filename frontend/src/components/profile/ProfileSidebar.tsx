@@ -1,7 +1,9 @@
+// src/components/profile/ProfileSidebar.tsx
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { User, Package, Heart, MapPin, CreditCard, LogOut } from 'lucide-react';
+// Đã xóa MapPin và CreditCard khỏi import
+import { User, Package, Heart, LogOut } from 'lucide-react';
 
 interface ProfileSidebarProps {
     activeTab: string;
@@ -35,13 +37,11 @@ export function ProfileSidebar({ activeTab, setActiveTab }: ProfileSidebarProps)
 
                     <div className="border-t border-stone-200 my-2"></div>
 
-                    {/* Navigation */}
+                    {/* Navigation - ĐÃ XÓA ADDRESS VÀ PAYMENT */}
                     <nav className="flex flex-col gap-2">
                         <SidebarItem icon={<User className="w-5 h-5" />} label="Profile" id="profile" activeTab={activeTab} onClick={setActiveTab} />
                         <SidebarItem icon={<Package className="w-5 h-5" />} label="Orders" id="orders" activeTab={activeTab} onClick={setActiveTab} />
                         <SidebarItem icon={<Heart className="w-5 h-5" />} label="Wishlist" id="wishlist" activeTab={activeTab} onClick={setActiveTab} />
-                        <SidebarItem icon={<MapPin className="w-5 h-5" />} label="Addresses" id="address" activeTab={activeTab} onClick={setActiveTab} />
-                        <SidebarItem icon={<CreditCard className="w-5 h-5" />} label="Payment Methods" id="payment" activeTab={activeTab} onClick={setActiveTab} />
                     </nav>
                 </div>
 

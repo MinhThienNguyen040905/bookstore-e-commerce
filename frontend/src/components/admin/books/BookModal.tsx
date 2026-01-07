@@ -233,9 +233,20 @@ export function BookModal({ book, isOpen, onClose, onSave, isSaving }: BookModal
     const { data: allPublishers = [] } = usePublishers();
 
     // Mapping options cho Select components
-    const authorOptions = useMemo(() => allAuthors.map(a => ({ id: a.author_id, name: a.name })), [allAuthors]);
-    const genreOptions = useMemo(() => allGenres.map(g => ({ id: g.genre_id, name: g.name })), [allGenres]);
-    const publisherOptions = useMemo(() => allPublishers.map(p => ({ id: p.publisher_id, name: p.name })), [allPublishers]);
+    const authorOptions = useMemo(() => {
+        // Nếu là mảng thì dùng luôn, nếu là object thì lấy property .authors
+        const list = Array.isArray(allAuthors) ? allAuthors : (allAuthors as any).authors || [];
+        return list.map((a: any) => ({ id: a.author_id, name: a.name }));
+    }, [allAuthors]);
+    const genreOptions = useMemo(() => {
+        const list = Array.isArray(allGenres) ? allGenres : (allGenres as any).genres || [];
+        return list.map((g: any) => ({ id: g.genre_id, name: g.name }));
+    }, [allGenres]);
+
+    const publisherOptions = useMemo(() => {
+        const list = Array.isArray(allPublishers) ? allPublishers : (allPublishers as any).publishers || [];
+        return list.map((p: any) => ({ id: p.publisher_id, name: p.name }));
+    }, [allPublishers]);
 
     useEffect(() => {
         if (isOpen) {
