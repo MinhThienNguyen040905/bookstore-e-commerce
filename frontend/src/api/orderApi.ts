@@ -19,7 +19,7 @@ export interface PromoResponse {
 
 export interface CreateOrderBody {
     promo_code?: string;
-    payment_method: 'paypal' | 'cash_on_delivery' | 'credit_card';
+    payment_method: 'COD' | 'VNPay' | 'paypal' | 'cash_on_delivery' | 'credit_card';
     address: string;
     phone: string;
 }
@@ -44,7 +44,7 @@ export interface OrderResponse {
 }
 
 export const checkPromoCode = async (body: PromoCheckBody) => {
-    const { data } = await api.post('/promos/by-code', body);
+    const { data } = await api.post<PromoResponse>('/promos/by-code', body);
     return data; // { success: true, data: PromoResponse }
 };
 

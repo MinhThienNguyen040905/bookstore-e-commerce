@@ -54,29 +54,31 @@ const buildStatusHistory = (currentStatus, orderDate) => {
     });
 };
 
+// === CHỈ XỬ LÝ TẠO ĐƠN COD ===
 const createOrder = async (req, res) => {
     const { promo_code, payment_method, address, phone } = req.body;
+
+    // 1. Chỉ chấp nhận COD ở API này
+    if (payment_method !== 'COD') {
+        return res.error('API này chỉ dành cho thanh toán COD. Vui lòng dùng API VNPay riêng.', 400);
+    }
+
     const transaction = await sequelize.transaction();
 
     try {
-        if (!payment_method) {
-            await transaction.rollback();
-            return res.error('Vui lòng chọn phương thức thanh toán', 400);
-        }
+        // Validation cơ bản
         if (!address || !phone) {
             await transaction.rollback();
-            return res.error('Vui lòng cung cấp địa chỉ và số điện thoại giao hàng', 400);
+            return res.error('Thiếu địa chỉ hoặc số điện thoại', 400);
         }
 
-        const user = await User.findByPk(req.user.user_id, {
-            attributes: ['user_id', 'name', 'email']
-        });
-
+        const user = await User.findByPk(req.user.user_id);
         if (!user) {
             await transaction.rollback();
-            return res.error('Không tìm thấy người dùng', 404);
+            return res.error('Không tìm thấy User', 404);
         }
 
+        // Lấy giỏ hàng
         const cartItems = await CartItem.findAll({
             where: { user_id: req.user.user_id },
             include: [Book],
@@ -88,58 +90,44 @@ const createOrder = async (req, res) => {
             return res.error('Giỏ hàng trống', 400);
         }
 
+        // Tính tiền & Check tồn kho
         let total_price = 0;
         for (const item of cartItems) {
-            const book = await Book.findByPk(item.book_id, {
-                lock: transaction.LOCK.UPDATE,
-                transaction
-            });
-
+            const book = await Book.findByPk(item.book_id, { lock: transaction.LOCK.UPDATE, transaction });
             if (!book || book.stock < item.quantity) {
                 await transaction.rollback();
-                return res.error(`Số lượng không đủ cho sách: ${book?.title || item.Book?.title || 'Không xác định'}`, 400);
+                return res.error(`Hết hàng: ${book?.title}`, 400);
             }
             total_price += item.quantity * book.price;
         }
 
+        // Check mã giảm giá
         let promo_id = null;
         if (promo_code) {
             const promo = await PromoCode.findOne({
-                where: {
-                    code: promo_code.toUpperCase(),
-                    expiry_date: { [Op.gte]: new Date() }
-                }
+                where: { code: promo_code.toUpperCase(), expiry_date: { [Op.gte]: new Date() } }
             });
-
-            if (!promo) {
-                await transaction.rollback();
-                return res.error('Mã khuyến mãi không hợp lệ hoặc đã hết hạn', 400);
+            if (promo && total_price >= promo.min_amount) {
+                total_price -= (total_price * promo.discount_percent) / 100;
+                promo_id = promo.promo_id;
             }
-            if (total_price < promo.min_amount) {
-                await transaction.rollback();
-                return res.error(`Đơn hàng tối thiểu ${promo.min_amount.toLocaleString()}₫ để dùng mã này`, 400);
-            }
-
-            total_price -= (total_price * promo.discount_percent) / 100;
-            promo_id = promo.promo_id;
         }
 
+        // TẠO ĐƠN HÀNG (STATUS: PROCESSING LUÔN)
         const order = await Order.create({
             user_id: req.user.user_id,
             promo_id,
             total_price: Math.round(total_price),
-            payment_method,
+            payment_method: 'COD',
             status: ORDER_STATUS.PROCESSING,
             address,
-            phone
+            phone,
+            payment_status: 'pending'
         }, { transaction });
 
+        // TẠO ORDER ITEMS & TRỪ KHO
         for (const item of cartItems) {
-            const book = await Book.findByPk(item.book_id, {
-                lock: transaction.LOCK.UPDATE,
-                transaction
-            });
-
+            const book = await Book.findByPk(item.book_id, { transaction });
             await OrderItem.create({
                 order_id: order.order_id,
                 book_id: item.book_id,
@@ -154,43 +142,29 @@ const createOrder = async (req, res) => {
             });
         }
 
+        // XÓA GIỎ HÀNG
         await CartItem.destroy({ where: { user_id: req.user.user_id }, transaction });
+
         await transaction.commit();
 
-        const newOrder = await Order.findByPk(order.order_id, {
-            include: [
-                { model: OrderItem, include: [Book] },
-                { model: PromoCode, attributes: ['code', 'discount_percent'] }
-            ]
-        });
-
-        const orderItemsForEmail = newOrder?.OrderItems?.map((item) => ({
-            title: item.Book?.title,
-            quantity: item.quantity,
-            price: item.price
-        })) || [];
-
+        // GỬI EMAIL
         try {
             if (user.email) {
+                // Lấy lại data để gửi mail đẹp
+                const fullOrder = await Order.findByPk(order.order_id, { include: [{ model: OrderItem, include: [Book] }] });
+                const itemsForMail = fullOrder.OrderItems.map(i => ({ title: i.Book.title, quantity: i.quantity, price: i.price }));
                 await sendOrderConfirmation({
-                    to: user.email,
-                    name: user.name,
-                    orderId: order.order_id,
-                    totalPrice: newOrder?.total_price,
-                    items: orderItemsForEmail
+                    to: user.email, name: user.name, orderId: order.order_id, totalPrice: fullOrder.total_price, items: itemsForMail
                 });
             }
-        } catch (emailErr) {
-            console.error('Lỗi gửi email xác nhận:', emailErr);
-        }
+        } catch (e) { console.error('Lỗi gửi mail:', e); }
 
-        return res.success({ order_id: order.order_id }, 'Đặt hàng thành công!', 201);
+        return res.success({ order_id: order.order_id }, 'Đặt hàng COD thành công!', 201);
+
     } catch (err) {
-        if (!transaction.finished) {
-            await transaction.rollback();
-        }
-        console.error('Lỗi tạo đơn hàng:', err);
-        res.error('Lỗi server khi đặt hàng', 500);
+        if (!transaction.finished) await transaction.rollback();
+        console.error('Lỗi COD:', err);
+        res.error('Lỗi server', 500);
     }
 };
 
