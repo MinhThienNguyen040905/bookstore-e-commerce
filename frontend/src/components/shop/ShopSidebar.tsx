@@ -1,7 +1,7 @@
 // src/components/shop/ShopSidebar.tsx
 import { useSearchParams } from 'react-router-dom';
 import { useShopGenres, useShopAuthors } from '@/hooks/useShop';
-import { Star, X, Filter } from 'lucide-react';
+import { Star, X, Filter, Check } from 'lucide-react'; // Thêm icon Check
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -13,30 +13,36 @@ interface ShopSidebarProps {
 
 export function ShopSidebar({ className, onClose }: ShopSidebarProps) {
     const [searchParams, setSearchParams] = useSearchParams();
-
     const { data: genresData } = useShopGenres();
     const { data: authorsData } = useShopAuthors();
 
+    // Xử lý dữ liệu an toàn
     const genres = Array.isArray(genresData) ? genresData : (genresData?.genres || []);
     const authors = Array.isArray(authorsData) ? authorsData : (authorsData?.authors || []);
 
     const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '');
     const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '');
 
+    // Hàm cập nhật URL Params chung
     const updateParam = (key: string, value: string | null) => {
         const newParams = new URLSearchParams(searchParams);
         if (value) newParams.set(key, value);
         else newParams.delete(key);
-        newParams.set('page', '1');
+        newParams.set('page', '1'); // Reset về trang 1 khi filter thay đổi
         setSearchParams(newParams);
     };
 
+    // Hàm xử lý chọn nhiều (Multi-select) cho cả Genre và Author
     const handleMultiSelect = (key: string, id: number) => {
         const current = searchParams.get(key)?.split(',').filter(Boolean) || [];
         const idStr = id.toString();
+
+        // Nếu đã chọn thì bỏ chọn, ngược lại thì thêm vào
         const newValues = current.includes(idStr)
             ? current.filter(i => i !== idStr)
             : [...current, idStr];
+
+        // Cập nhật lại URL (nối bằng dấu phẩy)
         updateParam(key, newValues.join(','));
     };
 
@@ -60,7 +66,7 @@ export function ShopSidebar({ className, onClose }: ShopSidebarProps) {
                 </button>
             </div>
 
-            {/* Price Range */}
+            {/* 1. Price Range */}
             <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-stone-900 border-l-4 border-[#008080] pl-3">Price Range</h3>
                 <div className="flex items-center gap-2">
@@ -87,7 +93,7 @@ export function ShopSidebar({ className, onClose }: ShopSidebarProps) {
                 </Button>
             </div>
 
-            {/* Genres */}
+            {/* 2. Genres (Multi-Select Checkbox) */}
             <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-stone-900 border-l-4 border-[#008080] pl-3">Genres</h3>
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
@@ -99,9 +105,7 @@ export function ShopSidebar({ className, onClose }: ShopSidebarProps) {
                                     "w-4 h-4 rounded border flex items-center justify-center transition-colors",
                                     isChecked ? "bg-[#008080] border-[#008080]" : "border-stone-300 bg-white group-hover:border-[#008080]"
                                 )}>
-                                    {isChecked && <X className="w-3 h-3 text-white rotate-45 transform" style={{ transform: 'rotate(0deg)' }} />}
-                                    {/* Dùng icon check hoặc custom svg */}
-                                    {isChecked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                                    {isChecked && <Check className="w-3 h-3 text-white" />}
                                 </div>
                                 <input
                                     type="checkbox" className="hidden"
@@ -117,22 +121,37 @@ export function ShopSidebar({ className, onClose }: ShopSidebarProps) {
                 </div>
             </div>
 
-            {/* Authors */}
+            {/* 3. Authors (Multi-Select Checkbox - ĐÃ SỬA TỪ SELECT SANG CHECKBOX) */}
             <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-stone-900 border-l-4 border-[#008080] pl-3">Authors</h3>
-                <select
-                    className="w-full rounded-md border-stone-200 bg-stone-50 focus:border-[#008080] focus:ring-[#008080] text-sm py-2.5"
-                    value={searchParams.get('author') || ''}
-                    onChange={(e) => updateParam('author', e.target.value)}
-                >
-                    <option value="">All Authors</option>
-                    {authors.map((a: any) => (
-                        <option key={a.author_id} value={a.author_id}>{a.name}</option>
-                    ))}
-                </select>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                    {authors.length > 0 ? authors.map((a: any) => {
+                        // Logic kiểm tra xem tác giả này có đang được chọn trên URL không
+                        const isChecked = searchParams.get('author')?.split(',').includes(a.author_id.toString());
+                        return (
+                            <label key={a.author_id} className="flex items-center gap-3 cursor-pointer group py-1">
+                                <div className={cn(
+                                    "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                                    isChecked ? "bg-[#008080] border-[#008080]" : "border-stone-300 bg-white group-hover:border-[#008080]"
+                                )}>
+                                    {isChecked && <Check className="w-3 h-3 text-white" />}
+                                </div>
+                                {/* Gọi hàm handleMultiSelect với key là 'author' */}
+                                <input
+                                    type="checkbox" className="hidden"
+                                    checked={isChecked || false}
+                                    onChange={() => handleMultiSelect('author', a.author_id)}
+                                />
+                                <span className={cn("text-sm transition-colors", isChecked ? "text-[#008080] font-medium" : "text-stone-600 group-hover:text-[#008080]")}>
+                                    {a.name}
+                                </span>
+                            </label>
+                        )
+                    }) : <p className="text-stone-400 text-xs italic">Loading authors...</p>}
+                </div>
             </div>
 
-            {/* Rating */}
+            {/* 4. Rating */}
             <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-stone-900 border-l-4 border-[#008080] pl-3">Rating</h3>
                 <div className="flex flex-col gap-2">

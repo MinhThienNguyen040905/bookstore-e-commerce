@@ -128,64 +128,95 @@ const buildBookOrder = (sort) => {
 };
 
 // === GET ALL BOOKS (ENHANCED) ===
+// === GET ALL BOOKS (Strict Mode: Genre=AND, Author=AND) ===
 const getBooks = async (req, res) => {
-    const { keyword, min_price, max_price, genre, rating, sort, page = 1, limit = 20 } = req.query;
+    const { keyword, min_price, max_price, genre, author, rating, sort, page = 1, limit = 20 } = req.query;
 
     try {
-        // Build basic filters
+        // --- A. Build basic filters (Title, Price) ---
         const where = buildBookFilters({ keyword, min_price, max_price });
 
-        // Pagination
+        // --- B. Pagination ---
         const currentPage = Math.max(parseInt(page) || 1, 1);
         const queryLimit = Math.max(parseInt(limit) || 20, 1);
         const offset = (currentPage - 1) * queryLimit;
 
-        // Build includes for filtering stage (only need Genre & Review filters)
+        // --- C. Prepare Includes & Having ---
         const includeForFilter = [
-            {
-                model: Review,
-                attributes: [],
-                required: false
-            }
+            { model: Review, attributes: [], required: false }
         ];
 
+        // Mảng chứa các điều kiện HAVING (Rating, Genre Count, Author Count)
+        const havingConditions = [];
+
+        // --- D. LOGIC RATING ---
+        if (rating) {
+            havingConditions.push(sequelize.where(avgRatingExpr, Op.gte, parseFloat(rating)));
+        }
+
+        // --- E. LOGIC GENRE (AND - GIAO) ---
+        // Sách phải có ĐỦ tất cả các thể loại được chọn
         if (genre) {
             const genreValues = genre.split(',').map(g => g.trim());
-            const isNumeric = genreValues.every(g => !isNaN(g));
+            const uniqueGenres = [...new Set(genreValues)]; // Loại bỏ trùng lặp
+            const genreCount = uniqueGenres.length;
+            const isNumeric = uniqueGenres.every(g => !isNaN(g));
 
             includeForFilter.push({
                 model: Genre,
                 attributes: [],
                 through: { attributes: [] },
                 where: isNumeric
-                    ? { genre_id: { [Op.in]: genreValues } }
-                    : { name: { [Op.in]: genreValues } },
+                    ? { genre_id: { [Op.in]: uniqueGenres } }
+                    : { name: { [Op.in]: uniqueGenres } },
                 required: true
             });
+
+            // Điều kiện: Số lượng genre của sách phải bằng số lượng genre yêu cầu
+            const genreCountExpr = sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col('Genres.genre_id')));
+            havingConditions.push(sequelize.where(genreCountExpr, Op.eq, genreCount));
         }
 
+        // --- F. LOGIC AUTHOR (AND - GIAO) ---
+        // Sách phải do ĐỦ tất cả các tác giả được chọn cùng viết (Đồng tác giả)
+        if (author) {
+            const authorValues = author.split(',').map(a => a.trim());
+            const uniqueAuthors = [...new Set(authorValues)]; // Loại bỏ trùng lặp
+            const authorCount = uniqueAuthors.length;
+            const isNumeric = authorValues.every(a => !isNaN(a));
+
+            includeForFilter.push({
+                model: Author,
+                attributes: [],
+                through: { attributes: [] },
+                where: isNumeric
+                    ? { author_id: { [Op.in]: uniqueAuthors } }
+                    : { name: { [Op.in]: uniqueAuthors } },
+                required: true
+            });
+
+            // Điều kiện: Số lượng tác giả của sách phải bằng số lượng tác giả yêu cầu
+            const authorCountExpr = sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col('Authors.author_id')));
+            havingConditions.push(sequelize.where(authorCountExpr, Op.eq, authorCount));
+        }
+
+        // --- G. Final Query Assembly ---
+        // Kết hợp tất cả điều kiện HAVING bằng toán tử AND
+        const finalHaving = havingConditions.length > 0 ? { [Op.and]: havingConditions } : undefined;
         const orderClause = buildBookOrder(sort);
-        const havingCondition = rating
-            ? sequelize.where(avgRatingExpr, Op.gte, parseFloat(rating))
-            : undefined;
 
         const baseGroupOptions = {
             where,
             include: includeForFilter,
-            group: ['Book.book_id', 'Book.price', 'Book.release_date'],
-            having: havingCondition,
+            group: ['Book.book_id'],
+            having: finalHaving,
             subQuery: false,
             raw: true
         };
 
         const pageGroupOptions = {
             ...baseGroupOptions,
-            attributes: [
-                'book_id',
-                'price',
-                'release_date',
-                [avgRatingExpr, 'avgRating']
-            ],
+            attributes: ['book_id', 'price', 'release_date', [avgRatingExpr, 'avgRating']],
             order: orderClause,
             limit: queryLimit,
             offset
@@ -199,29 +230,24 @@ const getBooks = async (req, res) => {
             offset: undefined
         };
 
-        // Step 1: fetch IDs that match the filters
+        // --- H. Execute ---
         const filteredBooks = await Book.findAll(pageGroupOptions);
         const totalDocs = (await Book.findAll(countGroupOptions)).length;
 
         if (!filteredBooks.length) {
             return res.success({
                 books: [],
-                pagination: {
-                    page: currentPage,
-                    limit: queryLimit,
-                    total: 0,
-                    totalPages: 0
-                }
+                pagination: { page: currentPage, limit: queryLimit, total: 0, totalPages: 0 }
             }, 'Không tìm thấy sách nào');
         }
 
+        // --- I. Fetch Details ---
         const targetIds = filteredBooks.map(book => book.book_id);
         const ratingMap = filteredBooks.reduce((acc, book) => {
             acc[book.book_id] = Number(book.avgRating ?? 0);
             return acc;
         }, {});
 
-        // Step 2: fetch detailed data without GROUP BY (preserves Authors/Genres)
         const finalBooks = await Book.findAll({
             where: { book_id: { [Op.in]: targetIds } },
             include: [
@@ -229,9 +255,7 @@ const getBooks = async (req, res) => {
                 { model: Author, attributes: ['name'], through: { attributes: [] } },
                 { model: Genre, attributes: ['name'], through: { attributes: [] } }
             ],
-            order: [
-                [sequelize.literal(`FIELD(Book.book_id, ${targetIds.join(',')})`)]
-            ]
+            order: [[sequelize.literal(`FIELD(Book.book_id, ${targetIds.join(',')})`)]]
         });
 
         const result = finalBooks.map(book => {
@@ -264,7 +288,6 @@ const getBooks = async (req, res) => {
         res.error('Lỗi server', 500);
     }
 };
-
 // === GET NEW RELEASES ===
 const getNewReleases = async (req, res) => {
     try {

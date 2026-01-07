@@ -12,6 +12,8 @@ import MyOrdersPage from '@/pages/MyOrdersPage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminPage from '@/pages/AdminPage'; // Import trang admin
 import ShopPage from '@/pages/ShopPage';
+import AboutPage from '@/pages/AboutPage';
+import CollectionPage from '@/pages/CollectionPage';
 
 export const routes: RouteObject[] = [
     { path: '/', element: <Home /> },
@@ -26,5 +28,15 @@ export const routes: RouteObject[] = [
     { path: '/my-orders', element: <MyOrdersPage /> },
     { path: '/profile', element: <ProfilePage /> },
     { path: '/admin', element: <AdminPage /> }, // Thêm route admin
-    { path: '/shop', element: <ShopPage /> }
+    { path: '/shop', element: <ShopPage /> },
+    { path: '/about', element: <AboutPage /> },
+
+    // --- CÁC ROUTE MỚI DÙNG CHUNG CollectionPage ---
+    { path: '/new-releases', element: <CollectionPage type="new-releases" /> },
+    { path: '/bestsellers', element: <CollectionPage type="bestsellers" /> },
+    { path: '/deals', element: <CollectionPage type="deals" /> },
+    { path: '/children-books', element: <CollectionPage type="children" /> },
+
+    // Route cho thể loại động: /genre/1, /genre/5...
+    { path: '/genre/:id', element: <CollectionPage type="genre" /> },
 ];
