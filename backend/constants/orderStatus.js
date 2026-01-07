@@ -1,5 +1,6 @@
 // constants/orderStatus.js
 export const ORDER_STATUS = {
+    PENDING_PAYMENT: 'pending_payment',
     PROCESSING: 'processing',
     SHIPPED: 'shipped',
     DELIVERED: 'delivered',
