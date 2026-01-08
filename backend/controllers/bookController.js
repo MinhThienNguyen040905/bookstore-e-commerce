@@ -7,6 +7,7 @@ import Genre from '../models/Genre.js';
 import Publisher from '../models/Publisher.js';
 import Review from '../models/Review.js';
 import User from '../models/User.js';
+import Wishlist from '../models/Wishlist.js';
 import cloudinary from '../cloudinary.js';
 import multer from 'multer';
 import fs from 'fs';
@@ -14,75 +15,279 @@ import fs from 'fs';
 const upload = multer({ dest: 'uploads/' });
 const uploadCover = upload.single('cover_image');
 
+
+const parseIds = (input) => {
+    if (!input) return [];
+
+    // Trường hợp 1: Đã là mảng (nếu frontend gửi dạng json hoặc x-www-form-urlencoded chuẩn)
+    if (Array.isArray(input)) {
+        return input.map(id => parseInt(id)).filter(id => !isNaN(id));
+    }
+
+    // Trường hợp 2: Là chuỗi
+    if (typeof input === 'string') {
+        // Nếu là chuỗi JSON "[1,2]"
+        if (input.startsWith('[')) {
+            try {
+                return JSON.parse(input).map(id => parseInt(id));
+            } catch (e) {
+                return [];
+            }
+        }
+        // Nếu là chuỗi ngăn cách dấu phẩy "1,2,3"
+        return input.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+    }
+
+    // Trường hợp 3: Là số đơn lẻ
+    return [parseInt(input)];
+};
+
 // === ADD BOOK ===
 const addBook = async (req, res) => {
+    // authors và genres nhận vào là danh sách ID (VD: "1,2" hoặc [1,2])
     const { title, description, publisher_id, stock, price, release_date, isbn, authors, genres } = req.body;
+
     try {
         let cover_image = '';
         if (req.file) {
             const result = await cloudinary.uploader.upload(req.file.path);
             cover_image = result.secure_url;
-            fs.unlinkSync(req.file.path); // Xóa file tạm
+            fs.unlinkSync(req.file.path);
         }
 
+        // Tạo sách
         const book = await Book.create({
             title, description, publisher_id, stock, price,
             cover_image, release_date, isbn
         });
 
+        // Xử lý Authors (Many-to-Many)
+        // Sequelize hỗ trợ truyền trực tiếp mảng ID vào hàm add/set
         if (authors) {
-            const authorInstances = await Author.findAll({ where: { author_id: authors.split(',') } });
-            await book.addAuthors(authorInstances);
+            const authorIds = parseIds(authors);
+            if (authorIds.length > 0) {
+                await book.addAuthors(authorIds); // [cite: 2134]
+            }
         }
+
+        // Xử lý Genres (Many-to-Many)
         if (genres) {
-            const genreInstances = await Genre.findAll({ where: { genre_id: genres.split(',') } });
-            await book.addGenres(genreInstances);
+            const genreIds = parseIds(genres);
+            if (genreIds.length > 0) {
+                await book.addGenres(genreIds); // [cite: 2147]
+            }
         }
 
         res.success({ book_id: book.book_id }, 'Thêm sách thành công', 201);
     } catch (err) {
+        // Xóa ảnh nếu tạo sách thất bại (dọn rác)
+        if (req.file && !res.headersSent) {
+            // Logic xóa ảnh trên cloud nếu cần
+        }
+        console.error(err);
         res.error(err.message || 'Lỗi thêm sách', 400);
     }
 };
 
-// === GET ALL BOOKS ===
-const getBooks = async (req, res) => {
-    const { title, author, genre, min_price, max_price, sort } = req.query;
-    let where = {};
+// === HELPER: Build WHERE clause for books ===
+const buildBookFilters = (queryParams) => {
+    const { keyword, min_price, max_price } = queryParams;
+    const where = {};
 
-    if (title) where.title = { [Op.like]: `%${title}%` };
-    if (min_price) where.price = { ...where.price, [Op.gte]: min_price };
-    if (max_price) where.price = { ...where.price, [Op.lte]: max_price };
+    // Search by title
+    if (keyword) {
+        where.title = { [Op.like]: `%${keyword}%` };
+    }
+
+    // Price range filter
+    if (min_price || max_price) {
+        where.price = {};
+        if (min_price) where.price[Op.gte] = parseFloat(min_price);
+        if (max_price) where.price[Op.lte] = parseFloat(max_price);
+    }
+
+    return where;
+};
+
+// === HELPER: Build ORDER clause ===
+const avgRatingExpr = sequelize.fn('COALESCE', sequelize.fn('AVG', sequelize.col('Reviews.rating')), 0);
+
+const buildBookOrder = (sort) => {
+    switch (sort) {
+        case 'price-asc':
+            return [['price', 'ASC']];
+        case 'price-desc':
+            return [['price', 'DESC']];
+        case 'newest':
+            return [['release_date', 'DESC']];
+        case 'top-rated':
+            return [[avgRatingExpr, 'DESC']];
+        default:
+            return [['book_id', 'DESC']]; // Default: newest added
+    }
+};
+
+// === GET ALL BOOKS (ENHANCED) ===
+// === GET ALL BOOKS (Strict Mode: Genre=AND, Author=AND) ===
+const getBooks = async (req, res) => {
+    const { keyword, min_price, max_price, genre, author, rating, sort, page = 1, limit = 20 } = req.query;
 
     try {
-        const books = await Book.findAll({
+        // --- A. Build basic filters (Title, Price) ---
+        const where = buildBookFilters({ keyword, min_price, max_price });
+
+        // --- B. Pagination ---
+        const currentPage = Math.max(parseInt(page) || 1, 1);
+        const queryLimit = Math.max(parseInt(limit) || 20, 1);
+        const offset = (currentPage - 1) * queryLimit;
+
+        // --- C. Prepare Includes & Having ---
+        const includeForFilter = [
+            { model: Review, attributes: [], required: false }
+        ];
+
+        // Mảng chứa các điều kiện HAVING (Rating, Genre Count, Author Count)
+        const havingConditions = [];
+
+        // --- D. LOGIC RATING ---
+        if (rating) {
+            havingConditions.push(sequelize.where(avgRatingExpr, Op.gte, parseFloat(rating)));
+        }
+
+        // --- E. LOGIC GENRE (AND - GIAO) ---
+        // Sách phải có ĐỦ tất cả các thể loại được chọn
+        if (genre) {
+            const genreValues = genre.split(',').map(g => g.trim());
+            const uniqueGenres = [...new Set(genreValues)]; // Loại bỏ trùng lặp
+            const genreCount = uniqueGenres.length;
+            const isNumeric = uniqueGenres.every(g => !isNaN(g));
+
+            includeForFilter.push({
+                model: Genre,
+                attributes: [],
+                through: { attributes: [] },
+                where: isNumeric
+                    ? { genre_id: { [Op.in]: uniqueGenres } }
+                    : { name: { [Op.in]: uniqueGenres } },
+                required: true
+            });
+
+            // Điều kiện: Số lượng genre của sách phải bằng số lượng genre yêu cầu
+            const genreCountExpr = sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col('Genres.genre_id')));
+            havingConditions.push(sequelize.where(genreCountExpr, Op.eq, genreCount));
+        }
+
+        // --- F. LOGIC AUTHOR (AND - GIAO) ---
+        // Sách phải do ĐỦ tất cả các tác giả được chọn cùng viết (Đồng tác giả)
+        if (author) {
+            const authorValues = author.split(',').map(a => a.trim());
+            const uniqueAuthors = [...new Set(authorValues)]; // Loại bỏ trùng lặp
+            const authorCount = uniqueAuthors.length;
+            const isNumeric = authorValues.every(a => !isNaN(a));
+
+            includeForFilter.push({
+                model: Author,
+                attributes: [],
+                through: { attributes: [] },
+                where: isNumeric
+                    ? { author_id: { [Op.in]: uniqueAuthors } }
+                    : { name: { [Op.in]: uniqueAuthors } },
+                required: true
+            });
+
+            // Điều kiện: Số lượng tác giả của sách phải bằng số lượng tác giả yêu cầu
+            const authorCountExpr = sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col('Authors.author_id')));
+            havingConditions.push(sequelize.where(authorCountExpr, Op.eq, authorCount));
+        }
+
+        // --- G. Final Query Assembly ---
+        // Kết hợp tất cả điều kiện HAVING bằng toán tử AND
+        const finalHaving = havingConditions.length > 0 ? { [Op.and]: havingConditions } : undefined;
+        const orderClause = buildBookOrder(sort);
+
+        const baseGroupOptions = {
             where,
-            attributes: ['book_id', 'title', 'cover_image', 'price', 'stock'],
+            include: includeForFilter,
+            group: ['Book.book_id'],
+            having: finalHaving,
+            subQuery: false,
+            raw: true
+        };
+
+        const pageGroupOptions = {
+            ...baseGroupOptions,
+            attributes: ['book_id', 'price', 'release_date', [avgRatingExpr, 'avgRating']],
+            order: orderClause,
+            limit: queryLimit,
+            offset
+        };
+
+        const countGroupOptions = {
+            ...baseGroupOptions,
+            attributes: ['book_id'],
+            order: undefined,
+            limit: undefined,
+            offset: undefined
+        };
+
+        // --- H. Execute ---
+        const filteredBooks = await Book.findAll(pageGroupOptions);
+        const totalDocs = (await Book.findAll(countGroupOptions)).length;
+
+        if (!filteredBooks.length) {
+            return res.success({
+                books: [],
+                pagination: { page: currentPage, limit: queryLimit, total: 0, totalPages: 0 }
+            }, 'Không tìm thấy sách nào');
+        }
+
+        // --- I. Fetch Details ---
+        const targetIds = filteredBooks.map(book => book.book_id);
+        const ratingMap = filteredBooks.reduce((acc, book) => {
+            acc[book.book_id] = Number(book.avgRating ?? 0);
+            return acc;
+        }, {});
+
+        const finalBooks = await Book.findAll({
+            where: { book_id: { [Op.in]: targetIds } },
             include: [
                 { model: Publisher, attributes: ['name'] },
                 { model: Author, attributes: ['name'], through: { attributes: [] } },
                 { model: Genre, attributes: ['name'], through: { attributes: [] } }
             ],
-            order: sort === 'price' ? [['price', 'ASC']] : [['book_id', 'DESC']]
+            order: [[sequelize.literal(`FIELD(Book.book_id, ${targetIds.join(',')})`)]]
         });
 
-        const result = books.map(book => ({
-            book_id: book.book_id,
-            title: book.title,
-            cover_image: book.cover_image,
-            price: Number(book.price),
-            stock: book.stock,
-            publisher: book.Publisher?.name,
-            authors: book.Authors?.map(a => a.name).join(', '),
-            genres: book.Genres?.map(g => g.name).join(', ')
-        }));
+        const result = finalBooks.map(book => {
+            const bookData = book.get({ plain: true });
+            return {
+                book_id: bookData.book_id,
+                title: bookData.title,
+                cover_image: bookData.cover_image,
+                price: Number(bookData.price),
+                stock: bookData.stock,
+                avg_rating: Number((ratingMap[bookData.book_id] ?? 0).toFixed(1)),
+                publisher: bookData.Publisher?.name || null,
+                authors: bookData.Authors?.map(a => a.name).join(', ') || '',
+                genres: bookData.Genres?.map(g => g.name).join(', ') || ''
+            };
+        });
 
-        res.success(result, 'Lấy danh sách sách thành công');
+        res.success({
+            books: result,
+            pagination: {
+                page: currentPage,
+                limit: queryLimit,
+                total: totalDocs,
+                totalPages: Math.ceil(totalDocs / queryLimit)
+            }
+        }, 'Lấy danh sách sách thành công');
+
     } catch (err) {
+        console.error('getBooks error:', err);
         res.error('Lỗi server', 500);
     }
 };
-
 // === GET NEW RELEASES ===
 const getNewReleases = async (req, res) => {
     try {
@@ -155,7 +360,7 @@ const getTopRatedBooks = async (req, res) => {
     }
 };
 
-// === GET BOOK BY ID ===
+// === GET BOOK BY ID (Đã chỉnh sửa) ===
 const getBookById = async (req, res) => {
     const { id } = req.params;
     try {
@@ -177,6 +382,22 @@ const getBookById = async (req, res) => {
 
         if (!book) return res.error('Sách không tồn tại', 404);
 
+        // --- LOGIC MỚI: CHECK WISHLIST ---
+        let is_in_wishlist = false;
+
+        // Nếu optionalAuth đã tìm thấy user từ token
+        if (req.user && req.user.user_id) {
+            const wishlistEntry = await Wishlist.findOne({
+                where: {
+                    user_id: req.user.user_id,
+                    book_id: id
+                }
+            });
+            // Nếu tìm thấy bản ghi => true, ngược lại false
+            is_in_wishlist = !!wishlistEntry;
+        }
+        // ---------------------------------
+
         const avgResult = await Review.findOne({
             where: { book_id: id },
             attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'avg_rating']],
@@ -184,7 +405,7 @@ const getBookById = async (req, res) => {
         });
 
         const avgRating = avgResult?.avg_rating
-            ? parseFloat(avgResult.avg_rating) // ← ÉP KIỂU CHÍNH XÁC
+            ? parseFloat(avgResult.avg_rating)
             : 0;
 
         const result = {
@@ -200,6 +421,9 @@ const getBookById = async (req, res) => {
             authors: book.Authors?.map(a => a.name).join(', '),
             genres: book.Genres,
             avg_rating: Number(avgRating.toFixed(1)),
+
+            is_in_wishlist, // <--- TRẢ VỀ TRƯỜNG MỚI TẠI ĐÂY
+
             reviews: book.Reviews?.map(r => ({
                 review_id: r.review_id,
                 rating: r.rating,
@@ -215,88 +439,58 @@ const getBookById = async (req, res) => {
 
         res.success(result, 'Lấy thông tin sách thành công');
     } catch (err) {
+        console.error(err);
         res.error('Lỗi server', 500);
     }
 };
-
 // === UPDATE BOOK ===
 const updateBook = async (req, res) => {
     const { id } = req.params;
     const { title, description, publisher_id, stock, price, release_date, isbn, authors, genres } = req.body;
 
     try {
-        // Validation: ID phải là số
-        if (isNaN(id)) {
-            return res.error('ID sách không hợp lệ', 400);
-        }
+        if (isNaN(id)) return res.error('ID sách không hợp lệ', 400);
 
         const book = await Book.findByPk(id);
-        if (!book) {
-            return res.error('Không tìm thấy sách', 404);
-        }
+        if (!book) return res.error('Không tìm thấy sách', 404);
 
-        // Validation: Price phải là số dương
-        if (price !== undefined && (isNaN(price) || price < 0)) {
-            return res.error('Giá sách phải là số dương', 400);
-        }
+        // Validation cơ bản
+        if (price !== undefined && (isNaN(price) || price < 0)) return res.error('Giá sách phải là số dương', 400);
+        if (stock !== undefined && (isNaN(stock) || stock < 0)) return res.error('Tồn kho phải là số dương', 400);
 
-        // Validation: Stock phải là số nguyên không âm
-        if (stock !== undefined && (isNaN(stock) || stock < 0 || !Number.isInteger(Number(stock)))) {
-            return res.error('Số lượng tồn kho phải là số nguyên không âm', 400);
-        }
-
-        // Validation: Publisher ID phải là số
-        if (publisher_id !== undefined && isNaN(publisher_id)) {
-            return res.error('ID nhà xuất bản không hợp lệ', 400);
-        }
-
-        // Nếu có upload ảnh mới
-        let cover_image = book.cover_image; // Giữ ảnh cũ mặc định
+        // Xử lý ảnh mới
+        let cover_image = undefined;
         if (req.file) {
             const result = await cloudinary.uploader.upload(req.file.path);
             cover_image = result.secure_url;
-            fs.unlinkSync(req.file.path); // Xóa file tạm
+            fs.unlinkSync(req.file.path);
 
-            // (Bonus) Xóa ảnh cũ trên Cloudinary
+            // Xóa ảnh cũ
             if (book.cover_image) {
                 try {
-                    const urlParts = book.cover_image.split('/');
-                    const publicIdWithExt = urlParts[urlParts.length - 1];
-                    const publicId = publicIdWithExt.split('.')[0];
+                    const publicId = book.cover_image.split('/').pop().split('.')[0];
                     await cloudinary.uploader.destroy(publicId);
-                } catch (err) {
-                    console.log('Không xóa được ảnh cũ:', err.message);
-                }
+                } catch (e) { console.log('Lỗi xóa ảnh cũ:', e.message); }
             }
         }
 
-        // Update các field (chỉ update những field được truyền vào)
-        const updateData = {};
-        if (title !== undefined) updateData.title = title;
-        if (description !== undefined) updateData.description = description;
-        if (publisher_id !== undefined) updateData.publisher_id = publisher_id;
-        if (stock !== undefined) updateData.stock = stock;
-        if (price !== undefined) updateData.price = price;
-        if (release_date !== undefined) updateData.release_date = release_date;
-        if (isbn !== undefined) updateData.isbn = isbn;
-        if (cover_image) updateData.cover_image = cover_image;
+        // Update thông tin cơ bản
+        await book.update({
+            title, description, publisher_id, stock, price, release_date, isbn,
+            ...(cover_image && { cover_image }) // Chỉ update nếu có ảnh mới
+        });
 
-        await book.update(updateData);
-
-        // Update authors nếu có
-        if (authors) {
-            const authorInstances = await Author.findAll({ 
-                where: { author_id: authors.split(',').map(id => id.trim()) } 
-            });
-            await book.setAuthors(authorInstances); // setAuthors thay vì addAuthors
+        // Update Authors (Dùng setAuthors để thay thế toàn bộ danh sách cũ bằng mới)
+        if (authors !== undefined) {
+            const authorIds = parseIds(authors);
+            // setAuthors([]) sẽ xóa hết tác giả nếu mảng rỗng, đúng ý đồ update
+            await book.setAuthors(authorIds);
         }
 
-        // Update genres nếu có
-        if (genres) {
-            const genreInstances = await Genre.findAll({ 
-                where: { genre_id: genres.split(',').map(id => id.trim()) } 
-            });
-            await book.setGenres(genreInstances);
+        // Update Genres (Tương tự)
+        if (genres !== undefined) {
+            const genreIds = parseIds(genres);
+            await book.setGenres(genreIds);
         }
 
         res.success({ book_id: book.book_id }, 'Cập nhật sách thành công');
@@ -345,4 +539,63 @@ const deleteBook = async (req, res) => {
     }
 };
 
-export default { uploadCover, addBook, updateBook, deleteBook, getBooks, getNewReleases, getTopRatedBooks, getBookById };
+// === LẤY TẤT CẢ SÁCH (CÓ PHÂN TRANG) ===
+const getAllBooksSystem = async (req, res) => {
+    try {
+        // 1. Lấy tham số từ Query String (URL)
+        // Mặc định: trang 1, 20 sách/trang nếu không gửi lên
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = (page - 1) * limit;
+
+        // 2. Query DB với phân trang
+        const { count, rows } = await Book.findAndCountAll({
+            // Giới hạn số lượng và vị trí bắt đầu
+            limit: limit,
+            offset: offset,
+
+            // Sắp xếp: Sách mới nhất lên đầu
+            order: [['book_id', 'DESC']],
+
+            // Lấy đầy đủ thông tin liên quan
+            include: [
+                {
+                    model: Publisher,
+                    attributes: ['publisher_id', 'name']
+                },
+                {
+                    model: Author,
+                    attributes: ['author_id', 'name'],
+                    through: { attributes: [] }
+                },
+                {
+                    model: Genre,
+                    attributes: ['genre_id', 'name'],
+                    through: { attributes: [] }
+                }
+            ],
+            // distinct: true là quan trọng khi dùng include để đếm chính xác số lượng sách (tránh bị nhân đôi do join)
+            distinct: true
+        });
+
+        // 3. Trả về kết quả kèm Metadata phân trang
+        res.success({
+            books: rows,
+            pagination: {
+                totalItems: count,
+                totalPages: Math.ceil(count / limit),
+                currentPage: page,
+                pageSize: limit
+            }
+        }, 'Lấy danh sách sách thành công');
+
+    } catch (err) {
+        console.error('Get all books system error:', err);
+        res.error('Lỗi server khi lấy danh sách sách', 500);
+    }
+};
+
+export default {
+    uploadCover, addBook, updateBook, deleteBook, getBooks, getNewReleases, getTopRatedBooks, getBookById,
+    getAllBooksSystem
+};

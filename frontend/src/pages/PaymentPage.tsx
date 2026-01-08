@@ -8,11 +8,17 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCartQuery } from '@/hooks/useCartQuery';
 import { useCheckPromo } from '@/hooks/usePromo';
-import { useCreateOrder } from '@/hooks/useCreateOrder';
 import { useAuthStore } from '@/features/auth/useAuthStore';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Tag, Truck, CreditCard } from 'lucide-react';
 import { showToast } from '@/lib/toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createOrder } from '@/api/orderApi';
+import { useVNPayPayment } from '@/hooks/useVNPayPayment';
+import { useCartStore } from '@/features/cart/useCartStore';
+import type { PromoResponse } from '@/api/orderApi';
+import { AxiosError } from 'axios';
+import { formatPrice } from '@/lib/utils'; // Thêm import formatPrice
 
 export default function PaymentPage() {
     const navigate = useNavigate();
@@ -22,13 +28,31 @@ export default function PaymentPage() {
     const subtotal = cartData?.total_price || 0;
 
     const [promoCode, setPromoCode] = useState('');
-    const [appliedPromo, setAppliedPromo] = useState<any>(null);
-    const [paymentMethod, setPaymentMethod] = useState<'cash_on_delivery' | 'paypal' | 'credit_card'>('cash_on_delivery');
+    const [appliedPromo, setAppliedPromo] = useState<PromoResponse | null>(null);
+
+    const [paymentMethod, setPaymentMethod] = useState<'COD' | 'VNPay'>('COD');
+
     const [address, setAddress] = useState(user?.address || '');
     const [phone, setPhone] = useState(user?.phone || '');
 
     const checkPromo = useCheckPromo();
-    const createOrder = useCreateOrder();
+    const queryClient = useQueryClient();
+    const clearCart = useCartStore((s) => s.clearCart);
+
+    const vnpayPayment = useVNPayPayment();
+
+    const createOrderMutation = useMutation({
+        mutationFn: createOrder,
+        onSuccess: (res) => {
+            showToast.success(res.message || 'Order placed successfully!');
+            clearCart();
+            queryClient.invalidateQueries({ queryKey: ['cart'] });
+            navigate('/order-success', { state: { order: res.data } });
+        },
+        onError: (err: AxiosError<{ message: string }>) => {
+            showToast.error(err.response?.data?.message || 'Failed to place order');
+        },
+    });
 
     if (!items.length) {
         return (
@@ -36,9 +60,9 @@ export default function PaymentPage() {
                 <Header />
                 <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
-                        <h2 className="text-2xl font-bold font-display text-stone-900 mb-4">Giỏ hàng trống</h2>
+                        <h2 className="text-2xl font-bold font-display text-stone-900 mb-4">Your cart is empty</h2>
                         <Link to="/">
-                            <Button className="bg-[#0df2d7] text-stone-900 font-bold">Tiếp tục mua sắm</Button>
+                            <Button className="bg-[#0df2d7] text-stone-900 font-bold">Continue Shopping</Button>
                         </Link>
                     </div>
                 </div>
@@ -50,7 +74,7 @@ export default function PaymentPage() {
     const finalPrice = appliedPromo ? appliedPromo.final_price : subtotal;
 
     const handleApplyPromo = () => {
-        if (!promoCode.trim()) return showToast.error('Vui lòng nhập mã khuyến mãi');
+        if (!promoCode.trim()) return showToast.error('Please enter a promo code');
         checkPromo.mutate(
             { code: promoCode, total_price: subtotal },
             { onSuccess: (data) => setAppliedPromo(data) }
@@ -59,21 +83,30 @@ export default function PaymentPage() {
 
     const handlePlaceOrder = () => {
         if (!address.trim() || !phone.trim()) {
-            return showToast.error('Vui lòng nhập địa chỉ và số điện thoại');
+            return showToast.error('Please enter your address and phone number');
         }
-        createOrder.mutate({
-            promo_code: appliedPromo?.code,
-            payment_method: paymentMethod,
-            address,
-            phone,
-        });
+
+        if (paymentMethod === 'COD') {
+            createOrderMutation.mutate({
+                promo_code: appliedPromo?.code,
+                payment_method: 'COD',
+                address,
+                phone,
+            });
+        } else if (paymentMethod === 'VNPay') {
+            vnpayPayment.mutate({
+                amount: finalPrice,
+                address,
+                phone,
+                promo_code: appliedPromo?.code,
+            });
+        }
     };
 
     return (
         <div className="flex flex-col min-h-screen bg-[#f5f8f8]">
             <Header />
             <main className="container mx-auto px-4 py-8 sm:py-12 flex-1">
-
                 <div className="flex flex-col gap-6">
                     {/* Breadcrumbs */}
                     <div className="flex flex-wrap gap-2 text-sm mb-2">
@@ -132,21 +165,34 @@ export default function PaymentPage() {
                                 <h2 className="text-xl font-bold font-display text-stone-900 mb-6 flex items-center gap-2">
                                     <CreditCard className="w-5 h-5 text-[#00bbb6]" /> Payment Method
                                 </h2>
-                                <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)} className="space-y-4">
+                                <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as 'COD' | 'VNPay')} className="space-y-4">
 
-                                    <div className={`flex items-center space-x-4 border rounded-lg p-4 cursor-pointer transition-colors ${paymentMethod === 'cash_on_delivery' ? 'border-[#0df2d7] bg-[#f0fdfd]' : 'border-stone-200 hover:bg-stone-50'}`}>
-                                        <RadioGroupItem value="cash_on_delivery" id="cod" className="text-[#0df2d7] border-stone-400" />
-                                        <Label htmlFor="cod" className="flex-1 cursor-pointer font-medium text-stone-900">Cash on Delivery (COD)</Label>
+                                    {/* Option 1: COD */}
+                                    <div
+                                        className={`flex items-center space-x-4 border rounded-lg p-4 cursor-pointer transition-colors ${paymentMethod === 'COD' ? 'border-[#0df2d7] bg-[#f0fdfd]' : 'border-stone-200 hover:bg-stone-50'
+                                            }`}
+                                        onClick={() => setPaymentMethod('COD')}
+                                    >
+                                        <RadioGroupItem value="COD" id="cod" className="text-[#0df2d7] border-stone-400" />
+                                        <Label htmlFor="cod" className="flex-1 cursor-pointer font-medium text-stone-900 flex items-center gap-2">
+                                            <Truck className="w-5 h-5 text-stone-500" />
+                                            Cash on Delivery (COD)
+                                        </Label>
                                     </div>
 
-                                    <div className={`flex items-center space-x-4 border rounded-lg p-4 cursor-pointer transition-colors ${paymentMethod === 'paypal' ? 'border-[#0df2d7] bg-[#f0fdfd]' : 'border-stone-200 hover:bg-stone-50'}`}>
-                                        <RadioGroupItem value="paypal" id="paypal" className="text-[#0df2d7] border-stone-400" />
-                                        <Label htmlFor="paypal" className="flex-1 cursor-pointer font-medium text-stone-900">PayPal</Label>
-                                    </div>
-
-                                    <div className={`flex items-center space-x-4 border rounded-lg p-4 cursor-pointer transition-colors ${paymentMethod === 'credit_card' ? 'border-[#0df2d7] bg-[#f0fdfd]' : 'border-stone-200 hover:bg-stone-50'}`}>
-                                        <RadioGroupItem value="credit_card" id="card" className="text-[#0df2d7] border-stone-400" />
-                                        <Label htmlFor="card" className="flex-1 cursor-pointer font-medium text-stone-900">Credit Card / Debit Card</Label>
+                                    {/* Option 2: VNPay */}
+                                    <div
+                                        className={`flex items-center space-x-4 border rounded-lg p-4 cursor-pointer transition-colors ${paymentMethod === 'VNPay' ? 'border-[#0df2d7] bg-[#f0fdfd]' : 'border-stone-200 hover:bg-stone-50'
+                                            }`}
+                                        onClick={() => setPaymentMethod('VNPay')}
+                                    >
+                                        <RadioGroupItem value="VNPay" id="vnpay" className="text-[#0df2d7] border-stone-400" />
+                                        <Label htmlFor="vnpay" className="flex-1 cursor-pointer font-medium text-stone-900 flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded overflow-hidden flex items-center justify-center bg-white border border-stone-100">
+                                                <img src="https://vnpay.vn/assets/images/logo-icon/logo-primary.svg" alt="VNPay" className="w-full h-full object-contain" />
+                                            </div>
+                                            Pay with VNPay (ATM / QR Code)
+                                        </Label>
                                     </div>
 
                                 </RadioGroup>
@@ -164,7 +210,7 @@ export default function PaymentPage() {
                                                 <p className="text-sm text-stone-500">{item.authors}</p>
                                                 <p className="text-sm text-stone-600 mt-1">Qty: {item.quantity}</p>
                                             </div>
-                                            <p className="font-bold text-stone-900">${(item.price * item.quantity).toFixed(2)}</p>
+                                            <p className="font-bold text-stone-900">{formatPrice(item.price * item.quantity)}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -196,7 +242,7 @@ export default function PaymentPage() {
                                     </div>
                                     {appliedPromo && (
                                         <div className="text-sm text-green-600 bg-green-50 p-2 rounded flex items-center gap-1 mt-1 border border-green-100">
-                                            <Tag className="w-3 h-3" /> Code <strong>{appliedPromo.code}</strong> applied: -${appliedPromo.discount_amount}
+                                            <Tag className="w-3 h-3" /> Code <strong>{appliedPromo.code}</strong> applied: -{formatPrice(appliedPromo.discount_amount)}
                                         </div>
                                     )}
                                 </div>
@@ -204,12 +250,12 @@ export default function PaymentPage() {
                                 <div className="flex flex-col border-b border-stone-200 pb-4 border-t border-stone-100 pt-4">
                                     <div className="flex justify-between gap-x-6 py-2">
                                         <p className="text-stone-600 text-sm">Subtotal</p>
-                                        <p className="text-stone-900 text-sm font-medium text-right">${subtotal.toLocaleString()}</p>
+                                        <p className="text-stone-900 text-sm font-medium text-right">{formatPrice(subtotal)}</p>
                                     </div>
                                     {appliedPromo && (
                                         <div className="flex justify-between gap-x-6 py-2 text-green-600">
                                             <p className="text-sm">Discount</p>
-                                            <p className="text-sm font-medium text-right">-${appliedPromo.discount_amount.toLocaleString()}</p>
+                                            <p className="text-sm font-medium text-right">-{formatPrice(appliedPromo.discount_amount)}</p>
                                         </div>
                                     )}
                                     <div className="flex justify-between gap-x-6 py-2">
@@ -221,16 +267,18 @@ export default function PaymentPage() {
                                 <div className="flex justify-between items-center gap-x-6">
                                     <p className="font-display font-bold text-lg text-stone-900">Total</p>
                                     <p className="font-display text-2xl font-bold text-right text-[#00bbb6]">
-                                        ${finalPrice.toLocaleString()}
+                                        {formatPrice(finalPrice)}
                                     </p>
                                 </div>
 
                                 <Button
                                     onClick={handlePlaceOrder}
-                                    disabled={createOrder.isPending}
+                                    disabled={createOrderMutation.isPending || vnpayPayment.isPending}
                                     className="w-full h-12 bg-[#0df2d7] hover:bg-[#00dcc3] text-stone-900 font-bold text-base tracking-wide rounded-lg shadow-sm"
                                 >
-                                    {createOrder.isPending ? 'Processing...' : 'Place Order'}
+                                    {createOrderMutation.isPending || vnpayPayment.isPending
+                                        ? 'Processing...'
+                                        : (paymentMethod === 'VNPay' ? 'Pay with VNPay' : 'Place Order (COD)')}
                                 </Button>
 
                                 <p className="text-xs text-center text-stone-500">
@@ -238,7 +286,6 @@ export default function PaymentPage() {
                                 </p>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </main>

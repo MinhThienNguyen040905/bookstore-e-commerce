@@ -1,49 +1,71 @@
 // src/components/book/BookDetailCard.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Star, Minus, Plus, ShoppingCart, Heart } from 'lucide-react';
 import type { Book } from '@/types/book';
 import { useAddToCart } from '@/hooks/useAddToCart';
+import { useAuthStore } from '@/features/auth/useAuthStore';
 import { cn } from '@/lib/utils';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toggleWishlistApi } from '@/api/wishlistApi';
+import { showToast } from '@/lib/toast';
+import { formatPrice } from '@/lib/utils';
 
 export function BookDetailCard({ book }: { book: Book }) {
     const [quantity, setQuantity] = useState(1);
     const addMutation = useAddToCart();
+    const { user } = useAuthStore();
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
-    // Giả lập ảnh gallery
-    const images = [book.cover_image, book.cover_image, book.cover_image, book.cover_image];
-    const [activeImage, setActiveImage] = useState(images[0]);
+    // Local state for instant UI feedback
+    const [isInWishlist, setIsInWishlist] = useState(book.is_in_wishlist);
+
+    // Sync state when server data changes
+    useEffect(() => {
+        setIsInWishlist(book.is_in_wishlist);
+    }, [book.is_in_wishlist]);
+
+    // Mutation to toggle wishlist
+    const wishlistMutation = useMutation({
+        mutationFn: toggleWishlistApi,
+        onSuccess: (data) => {
+            const isAdded = data.action === 'added';
+            setIsInWishlist(isAdded);
+            showToast.success(data.message || (isAdded ? 'Added to wishlist' : 'Removed from wishlist'));
+            queryClient.invalidateQueries({ queryKey: ['book', book.book_id] });
+        },
+        onError: (err: any) => {
+            showToast.error(err.message || 'Failed to update wishlist');
+            // Revert state on error
+            setIsInWishlist(!isInWishlist);
+        }
+    });
 
     const handleAddToCart = () => {
         addMutation.mutate({ book, quantity });
     };
 
+    const handleToggleWishlist = () => {
+        if (!user) {
+            showToast.error("Please login to add to wishlist");
+            navigate('/login', { state: { from: location.pathname } });
+            return;
+        }
+        // Optimistic update
+        setIsInWishlist((prev) => !prev);
+        wishlistMutation.mutate(book.book_id);
+    };
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
-            {/* LEFT: Image Gallery */}
+            {/* LEFT: Single Image */}
             <div className="flex flex-col gap-4">
-                {/* Main Image */}
                 <div
                     className="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-xl shadow-md transition-transform duration-300 hover:scale-105 border border-gray-100"
-                    style={{ backgroundImage: `url("${activeImage}")` }}
+                    style={{ backgroundImage: `url("${book.cover_image}")` }}
                 ></div>
-
-                {/* Thumbnails */}
-                <div className="grid grid-cols-4 gap-3">
-                    {images.map((img, idx) => (
-                        <div
-                            key={idx}
-                            onClick={() => setActiveImage(img)}
-                            className={cn(
-                                "w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg cursor-pointer transition-all",
-                                activeImage === img
-                                    ? "border-2 border-[#00796B] opacity-100" // Đổi sang màu Teal
-                                    : "opacity-70 hover:opacity-100 border border-transparent"
-                            )}
-                            style={{ backgroundImage: `url("${img}")` }}
-                        ></div>
-                    ))}
-                </div>
             </div>
 
             {/* RIGHT: Product Details */}
@@ -63,8 +85,8 @@ export function BookDetailCard({ book }: { book: Book }) {
                         {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                                 key={star}
-                                className={cn("w-5 h-5", star <= book.avg_rating ? "fill-current" : "text-gray-300")}
-                                fill={star <= book.avg_rating ? "currentColor" : "none"}
+                                className={cn("w-5 h-5", star <= Math.round(book.avg_rating) ? "fill-current" : "text-gray-300")}
+                                fill={star <= Math.round(book.avg_rating) ? "currentColor" : "none"}
                                 strokeWidth={0}
                             />
                         ))}
@@ -77,10 +99,10 @@ export function BookDetailCard({ book }: { book: Book }) {
                 {/* Price */}
                 <div className="flex items-baseline gap-3">
                     <span className="text-[#2F4F4F] text-4xl font-bold font-display">
-                        ${book.price.toFixed(2)}
+                        {formatPrice(book.price)}
                     </span>
                     <span className="text-red-400 text-xl line-through">
-                        ${(book.price * 1.2).toFixed(2)}
+                        {formatPrice(book.price * 1.2)}
                     </span>
                 </div>
 
@@ -93,16 +115,16 @@ export function BookDetailCard({ book }: { book: Book }) {
                     <li className="flex gap-2"><strong className="font-medium text-[#2F4F4F] w-32">ISBN:</strong> {book.isbn}</li>
                     <li className="flex gap-2"><strong className="font-medium text-[#2F4F4F] w-32">Stock:</strong> {book.stock} available</li>
                     <li className="flex gap-2"><strong className="font-medium text-[#2F4F4F] w-32">Publisher:</strong> {book.publisher}</li>
-                    <li className="flex gap-2"><strong className="font-medium text-[#2F4F4F] w-32">Publication Date:</strong> {new Date(book.release_date).toLocaleDateString()}</li>
+                    <li className="flex gap-2"><strong className="font-medium text-[#2F4F4F] w-32">Release Date:</strong> {new Date(book.release_date).toLocaleDateString()}</li>
                 </ul>
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-200">
                     {/* Quantity */}
-                    <div className="flex items-center border border-slate-300 rounded-lg h-12">
+                    <div className="flex items-center border border-slate-300 rounded-lg h-12 bg-white">
                         <button
                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                            className="px-4 text-slate-500 hover:text-[#00796B] h-full"
+                            className="px-4 text-slate-500 hover:text-[#00796B] h-full transition-colors"
                         >
                             <Minus className="w-4 h-4" />
                         </button>
@@ -114,7 +136,7 @@ export function BookDetailCard({ book }: { book: Book }) {
                         />
                         <button
                             onClick={() => setQuantity(quantity + 1)}
-                            className="px-4 text-slate-500 hover:text-[#00796B] h-full"
+                            className="px-4 text-slate-500 hover:text-[#00796B] h-full transition-colors"
                         >
                             <Plus className="w-4 h-4" />
                         </button>
@@ -123,21 +145,27 @@ export function BookDetailCard({ book }: { book: Book }) {
                     {/* Add to Cart */}
                     <Button
                         onClick={handleAddToCart}
-                        className="w-full flex-1 flex items-center justify-center gap-2 rounded-lg h-12 px-6 bg-[#00796B] hover:bg-[#00695C] text-white font-bold text-base shadow-sm border-none"
+                        className="w-full sm:flex-1 flex items-center justify-center gap-2 rounded-lg h-12 px-6 bg-[#00796B] hover:bg-[#00695C] text-white font-bold text-base shadow-sm border-none transition-all"
+                        disabled={book.stock <= 0}
                     >
                         <ShoppingCart className="w-5 h-5" />
-                        Add to Cart
+                        {book.stock > 0 ? "Add to Cart" : "Out of Stock"}
                     </Button>
 
-                    {/* Wishlist */}
-                    <button className="w-full sm:w-auto flex items-center justify-center rounded-lg h-12 px-4 border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#00796B] transition-colors">
-                        <Heart className="w-5 h-5" />
+                    {/* Wishlist Button */}
+                    <button
+                        onClick={handleToggleWishlist}
+                        className={cn(
+                            "w-full sm:w-auto flex items-center justify-center rounded-lg h-12 px-4 border transition-all duration-300",
+                            isInWishlist
+                                ? "border-red-200 bg-red-50 text-red-500 hover:bg-red-100"
+                                : "border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#00796B]"
+                        )}
+                        title={isInWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+                    >
+                        <Heart className={cn("w-5 h-5", isInWishlist && "fill-current")} />
                     </button>
                 </div>
-
-                <Button className="w-full flex items-center justify-center gap-2 rounded-lg h-12 px-6 bg-[#00796B]/10 hover:bg-[#00796B]/20 text-[#00796B] font-bold border-none shadow-none">
-                    Buy Now
-                </Button>
             </div>
         </div>
     );

@@ -13,4 +13,12 @@ router.post('/verify-otp', userController.verifyOTP);
 router.post('/register', userController.completeRegister);
 router.post('/reset-password', userController.resetPassword);
 
+router.put('/profile', auth, userController.uploadAvatar, userController.updateProfile);
+
+// === Route Đổi Mật Khẩu ===
+// Yêu cầu phải đăng nhập (auth)
+router.put('/change-password', auth, userController.changePassword);
+
+router.delete('/delete', auth, userController.deleteUser);
+
 export default router;

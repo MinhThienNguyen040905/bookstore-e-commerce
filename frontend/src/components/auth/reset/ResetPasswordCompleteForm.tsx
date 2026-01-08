@@ -11,24 +11,33 @@ import { useNavigate } from 'react-router-dom';
 export default function ResetPasswordCompleteForm({ email, otp }: { email: string; otp: string }) {
     const navigate = useNavigate();
 
-    if (!email || !otp) {
-        return <p className="text-red-500 text-center">Invalid Data. Please restart the process.</p>;
-    }
-
+    // 1. SỬA LỖI HOOK: Gọi useForm TRƯỚC khi return
     const {
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
     } = useForm<ResetPasswordData>({
         resolver: zodResolver(resetPasswordSchema),
+        // Thêm defaultValues để form nhận diện được email và otp ngay từ đầu
+        defaultValues: {
+            email: email,
+            otp: otp,
+            newPassword: '',
+            confirmPassword: ''
+        }
     });
+
+    // 2. Di chuyển đoạn kiểm tra điều kiện xuống dưới Hook
+    if (!email || !otp) {
+        return <p className="text-red-500 text-center">Invalid Data. Please restart the process.</p>;
+    }
 
     const onSubmit = async (data: ResetPasswordData) => {
         const toastId = showToast.loading('Updating password...');
         try {
             await resetPassword({
-                email,
-                otp,
+                email, // Lấy từ props hoặc data.email
+                otp,   // Lấy từ props hoặc data.otp
                 newPassword: data.newPassword,
             });
             showToast.dismiss(toastId);
@@ -43,8 +52,13 @@ export default function ResetPasswordCompleteForm({ email, otp }: { email: strin
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* Đăng ký các trường ẩn để Zod validation hoạt động đúng */}
+            <input type="hidden" {...register('email')} />
+            <input type="hidden" {...register('otp')} />
+
             <div className="space-y-2">
-                <Label htmlFor="newPassword" classname="text-stone-600 font-medium">New Password</Label>
+                {/* 3. SỬA LỖI TYPO: classname -> className */}
+                <Label htmlFor="newPassword" className="text-stone-600 font-medium">New Password</Label>
                 <Input
                     id="newPassword"
                     type="password"
@@ -55,7 +69,8 @@ export default function ResetPasswordCompleteForm({ email, otp }: { email: strin
                 {errors.newPassword && <p className="text-sm text-red-500">{errors.newPassword.message}</p>}
             </div>
             <div className="space-y-2">
-                <Label htmlFor="confirmPassword" classname="text-stone-600 font-medium">Confirm Password</Label>
+                {/* 3. SỬA LỖI TYPO: classname -> className */}
+                <Label htmlFor="confirmPassword" className="text-stone-600 font-medium">Confirm Password</Label>
                 <Input
                     id="confirmPassword"
                     type="password"

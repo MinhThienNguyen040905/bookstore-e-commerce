@@ -86,7 +86,7 @@ function BookDetailPageContent() {
 
                         {activeTab === 'reviews' && (
                             <div id="reviews">
-                                <BookReviews reviews={book.reviews} />
+                                <BookReviews bookId={ book.book_id} reviews={book.reviews} />
                             </div>
                         )}
                     </div>

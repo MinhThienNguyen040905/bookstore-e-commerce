@@ -27,16 +27,23 @@ module.exports = {
       allowNull: false
     });
 
-    // 3. Tạo lại index
-    await queryInterface.addIndex('Sessions', ['user_id'], {
-      name: 'sessions_user_id'
-    });
-    await queryInterface.addIndex('Sessions', ['refresh_token'], {
-      name: 'sessions_refresh_token'
-    });
-    await queryInterface.addIndex('Sessions', ['expires_at'], {
-      name: 'sessions_expires_at'
-    });
+    // 3. Tạo lại index (chỉ tạo nếu chưa tồn tại)
+    const indexesToAdd = [
+      { fields: ['user_id'], name: 'sessions_user_id' },
+      { fields: ['refresh_token'], name: 'sessions_refresh_token' },
+      { fields: ['expires_at'], name: 'sessions_expires_at' }
+    ];
+
+    for (const index of indexesToAdd) {
+      try {
+        await queryInterface.addIndex('Sessions', index.fields, {
+          name: index.name
+        });
+        console.log(`Đã tạo index: ${index.name}`);
+      } catch (err) {
+        console.log(`Index ${index.name} đã tồn tại → bỏ qua`);
+      }
+    }
 
     console.log('HOÀN TẤT! Không còn lỗi duplicate.');
   },
