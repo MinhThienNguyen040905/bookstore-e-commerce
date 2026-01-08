@@ -4,13 +4,13 @@ import { useAuthStore } from '@/features/auth/useAuthStore';
 import { showToast } from '@/lib/toast';
 
 export const useAuth = () => {
-    const { setAccessToken, setUser, updateUser, clearAuth, user } = useAuthStore(); // Lấy updateUser
+    const { setAccessToken, setUser, updateUser, clearAuth, user } = useAuthStore();
 
     const loginMutation = useMutation({
         mutationFn: ({ email, password }: { email: string; password: string }) =>
             login(email, password),
         onMutate: () => {
-            const toastId = showToast.loading('Đang đăng nhập...');
+            const toastId = showToast.loading('Logging in...');
             return { toastId };
         },
         onSuccess: (data) => {
@@ -18,67 +18,64 @@ export const useAuth = () => {
             const { accessToken, user } = data;
             setAccessToken(accessToken);
             setUser(user);
-            showToast.success('Đăng nhập thành công!');
+            showToast.success('Login successful!');
         },
         onError: (_err, _vars, context) => {
             showToast.dismiss(context?.toastId);
-            showToast.error('Đăng nhập thất bại');
+            showToast.error('Login failed');
         },
     });
 
     const logoutMutation = useMutation({
         mutationFn: logout,
         onMutate: () => {
-            const toastId = showToast.loading('Đang đăng xuất...');
+            const toastId = showToast.loading('Logging out...');
             return { toastId };
         },
         onSuccess: () => {
             clearAuth();
-            showToast.success('Đăng xuất thành công');
+            showToast.success('Logout successful');
         },
         onError: (_err, _vars, context) => {
             showToast.dismiss(context?.toastId);
-            showToast.error('Lỗi đăng xuất');
+            showToast.error('Logout error');
             clearAuth();
         },
     });
 
-    // Mutation cập nhật thông tin
+    // Mutation to update profile
     const updateProfileMutation = useMutation({
         mutationFn: updateProfile,
         onMutate: () => {
-            // Return toastId để có thể dismiss hoặc update sau này
-            return { toastId: showToast.loading('Đang cập nhật...') };
+            return { toastId: showToast.loading('Updating profile...') };
         },
         onSuccess: (data, variables, context) => {
-            // Backend trả về data.data là object user mới (tùy cấu trúc res.success của bạn)
-            // Giả sử backend trả về: { success: true, data: { ...user info } }
             const updatedUser = data.data || data;
 
-            updateUser(updatedUser); // Cập nhật Store
+            updateUser(updatedUser);
 
             showToast.dismiss(context?.toastId);
-            showToast.success('Cập nhật hồ sơ thành công!');
+            showToast.success('Profile updated successfully!');
         },
         onError: (err: any, variables, context) => {
             showToast.dismiss(context?.toastId);
-            showToast.error(err.response?.data?.message || 'Cập nhật thất bại');
+            showToast.error(err.response?.data?.message || 'Update failed');
         },
     });
 
-    // Mutation Đổi mật khẩu
+    // Mutation to change password
     const changePasswordMutation = useMutation({
         mutationFn: changePassword,
         onMutate: () => {
-            return { toastId: showToast.loading('Đang đổi mật khẩu...') };
+            return { toastId: showToast.loading('Changing password...') };
         },
         onSuccess: (data, variables, context) => {
             showToast.dismiss(context?.toastId);
-            showToast.success('Đổi mật khẩu thành công!');
+            showToast.success('Password changed successfully!');
         },
         onError: (err: any, variables, context) => {
             showToast.dismiss(context?.toastId);
-            showToast.error(err.response?.data?.message || 'Đổi mật khẩu thất bại');
+            showToast.error(err.response?.data?.message || 'Password change failed');
         },
     });
 
@@ -87,11 +84,11 @@ export const useAuth = () => {
         logout: logoutMutation.mutate,
         isLoggingIn: loginMutation.isPending,
         isLoggingOut: logoutMutation.isPending,
-        user, // Trả về user từ store
+        user,
         updateProfile: updateProfileMutation.mutate,
         isUpdating: updateProfileMutation.isPending,
 
-        changePassword: changePasswordMutation.mutateAsync, // Dùng mutateAsync để xử lý await ở UI
+        changePassword: changePasswordMutation.mutateAsync, // Use mutateAsync for await handling in UI
         isChangingPassword: changePasswordMutation.isPending,
     };
 };

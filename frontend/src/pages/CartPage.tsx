@@ -9,7 +9,7 @@ import { useCartQuery } from '@/hooks/useCartQuery';
 import { useRemoveFromCart, useUpdateCart } from '@/hooks/useCartActions';
 import { Link } from 'react-router-dom';
 import { showToast } from '@/lib/toast';
-import { cn } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils'; // Thêm formatPrice
 
 export default function CartPage() {
     const { data: cartData, isLoading } = useCartQuery();
@@ -25,14 +25,14 @@ export default function CartPage() {
 
     const handleRemoveSelected = () => {
         if (selectedItems.size === 0) {
-            showToast.error('Vui lòng chọn ít nhất 1 sản phẩm');
+            showToast.error('Please select at least one product');
             return;
         }
         selectedItems.forEach((bookId) => {
             removeMutation.mutate(bookId);
         });
         setSelectedItems(new Set());
-        showToast.success('Đã xóa các sản phẩm đã chọn');
+        showToast.success('Selected products have been removed');
     };
 
     const toggleSelect = (bookId: number) => {
@@ -57,7 +57,7 @@ export default function CartPage() {
         .filter(i => selectedItems.has(i.book_id))
         .reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-    if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-[#f5f8f8]">Đang tải giỏ hàng...</div>;
+    if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-[#f5f8f8]">Loading cart...</div>;
 
     if (!items.length) {
         return (
@@ -65,10 +65,10 @@ export default function CartPage() {
                 <Header />
                 <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
-                        <h2 className="text-2xl font-bold font-display text-stone-900 mb-4">Giỏ hàng trống</h2>
+                        <h2 className="text-2xl font-bold font-display text-stone-900 mb-4">Your cart is empty</h2>
                         <Link to="/">
                             <Button className="bg-[#0df2d7] hover:bg-[#00dcc3] text-stone-900 font-bold px-8 h-12 rounded-lg">
-                                Tiếp tục mua sắm
+                                Continue Shopping
                             </Button>
                         </Link>
                     </div>
@@ -107,7 +107,7 @@ export default function CartPage() {
                                         onCheckedChange={toggleSelectAll}
                                         className="border-stone-300 data-[state=checked]:bg-[#0df2d7] data-[state=checked]:text-stone-900"
                                     />
-                                    <span className="font-medium text-stone-700">Chọn tất cả ({items.length})</span>
+                                    <span className="font-medium text-stone-700">Select all ({items.length})</span>
                                 </div>
                                 <Button
                                     variant="ghost"
@@ -117,7 +117,7 @@ export default function CartPage() {
                                     disabled={selectedItems.size === 0}
                                 >
                                     <Trash2 className="w-4 h-4 mr-2" />
-                                    Xóa đã chọn
+                                    Delete Selected
                                 </Button>
                             </div>
 
@@ -160,7 +160,7 @@ export default function CartPage() {
                                                         </div>
                                                     </td>
                                                     <td className="px-0 sm:px-6 py-2 sm:py-4 align-middle font-medium text-stone-900">
-                                                        ${item.price.toLocaleString('en-US')}
+                                                        {formatPrice(item.price)}
                                                     </td>
                                                     <td className="px-0 sm:px-6 py-2 sm:py-4 align-middle">
                                                         <div className="flex items-center border border-stone-200 rounded-md w-fit bg-white">
@@ -186,7 +186,7 @@ export default function CartPage() {
                                                         </div>
                                                     </td>
                                                     <td className="px-0 sm:px-6 py-2 sm:py-4 text-left sm:text-right align-middle font-bold text-stone-900">
-                                                        ${(item.price * item.quantity).toLocaleString('en-US')}
+                                                        {formatPrice(item.price * item.quantity)}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -228,7 +228,7 @@ export default function CartPage() {
                                 <div className="flex justify-between items-center gap-x-6">
                                     <p className="font-display font-bold text-lg text-stone-900">Total</p>
                                     <p className="font-display text-2xl font-bold text-right text-[#00bbb6]">
-                                        ${selectedTotal.toLocaleString('en-US')}
+                                        {formatPrice(selectedTotal)}
                                     </p>
                                 </div>
 

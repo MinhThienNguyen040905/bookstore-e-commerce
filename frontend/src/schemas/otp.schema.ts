@@ -2,20 +2,20 @@
 import { z } from 'zod';
 
 export const requestOTPSchema = z.object({
-    email: z.string().email('Email không hợp lệ'),
+    email: z.string().email('Invalid email address'),
 });
 
 export const verifyOTPSchema = z.object({
     email: z.string().email(),
-    otp: z.string().length(6, 'OTP phải 6 ký tự'),
+    otp: z.string().length(6, 'OTP must be 6 characters'),
 });
 
 export const completeRegisterSchema = z.object({
-    name: z.string().min(2, 'Họ tên ít nhất 2 ký tự'),
-    password: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự'),
+    name: z.string().min(2, 'Name must be at least 2 characters'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
-    message: 'Mật khẩu không khớp',
+    message: 'Passwords do not match',
     path: ['confirmPassword'],
 });
 
@@ -25,7 +25,7 @@ export const resetPasswordSchema = z.object({
     newPassword: z.string().min(6),
     confirmPassword: z.string(),
 }).refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Mật khẩu không khớp',
+    message: 'Passwords do not match',
     path: ['confirmPassword'],
 });
 

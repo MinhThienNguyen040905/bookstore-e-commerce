@@ -8,8 +8,9 @@ import { useAddToCart } from '@/hooks/useAddToCart';
 import { useAuthStore } from '@/features/auth/useAuthStore';
 import { cn } from '@/lib/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toggleWishlistApi } from '@/api/wishlistApi'; // Import API mới
+import { toggleWishlistApi } from '@/api/wishlistApi';
 import { showToast } from '@/lib/toast';
+import { formatPrice } from '@/lib/utils';
 
 export function BookDetailCard({ book }: { book: Book }) {
     const [quantity, setQuantity] = useState(1);
@@ -18,28 +19,26 @@ export function BookDetailCard({ book }: { book: Book }) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
-    // State local để phản hồi UI ngay lập tức
+    // Local state for instant UI feedback
     const [isInWishlist, setIsInWishlist] = useState(book.is_in_wishlist);
 
-    // Sync state khi data từ server thay đổi
+    // Sync state when server data changes
     useEffect(() => {
         setIsInWishlist(book.is_in_wishlist);
     }, [book.is_in_wishlist]);
 
-    // Mutation Toggle Wishlist
+    // Mutation to toggle wishlist
     const wishlistMutation = useMutation({
         mutationFn: toggleWishlistApi,
         onSuccess: (data) => {
-            // data.action trả về 'added' hoặc 'removed' từ backend
             const isAdded = data.action === 'added';
             setIsInWishlist(isAdded);
-            showToast.success(data.message || (isAdded ? 'Đã thêm vào yêu thích' : 'Đã xóa khỏi yêu thích'));
-            // Invalidate để đồng bộ lại dữ liệu nếu cần thiết
+            showToast.success(data.message || (isAdded ? 'Added to wishlist' : 'Removed from wishlist'));
             queryClient.invalidateQueries({ queryKey: ['book', book.book_id] });
         },
         onError: (err: any) => {
-            showToast.error(err.message || 'Lỗi khi cập nhật danh sách yêu thích');
-            // Revert lại trạng thái nếu lỗi
+            showToast.error(err.message || 'Failed to update wishlist');
+            // Revert state on error
             setIsInWishlist(!isInWishlist);
         }
     });
@@ -50,18 +49,18 @@ export function BookDetailCard({ book }: { book: Book }) {
 
     const handleToggleWishlist = () => {
         if (!user) {
-            showToast.error("Vui lòng đăng nhập để thêm vào danh sách yêu thích");
+            showToast.error("Please login to add to wishlist");
             navigate('/login', { state: { from: location.pathname } });
             return;
         }
-        // Optimistic update (Cập nhật giả lập trước khi gọi API)
+        // Optimistic update
         setIsInWishlist((prev) => !prev);
         wishlistMutation.mutate(book.book_id);
     };
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
-            {/* LEFT: Single Image (Đã xóa Gallery) */}
+            {/* LEFT: Single Image */}
             <div className="flex flex-col gap-4">
                 <div
                     className="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-xl shadow-md transition-transform duration-300 hover:scale-105 border border-gray-100"
@@ -100,10 +99,10 @@ export function BookDetailCard({ book }: { book: Book }) {
                 {/* Price */}
                 <div className="flex items-baseline gap-3">
                     <span className="text-[#2F4F4F] text-4xl font-bold font-display">
-                        ${book.price.toLocaleString('en-US')}
+                        {formatPrice(book.price)}
                     </span>
                     <span className="text-red-400 text-xl line-through">
-                        ${(book.price * 1.2).toLocaleString('en-US')}
+                        {formatPrice(book.price * 1.2)}
                     </span>
                 </div>
 
@@ -153,7 +152,7 @@ export function BookDetailCard({ book }: { book: Book }) {
                         {book.stock > 0 ? "Add to Cart" : "Out of Stock"}
                     </Button>
 
-                    {/* Wishlist Button (Updated Logic) */}
+                    {/* Wishlist Button */}
                     <button
                         onClick={handleToggleWishlist}
                         className={cn(
@@ -167,7 +166,6 @@ export function BookDetailCard({ book }: { book: Book }) {
                         <Heart className={cn("w-5 h-5", isInWishlist && "fill-current")} />
                     </button>
                 </div>
-                {/* Đã xóa nút Buy Now */}
             </div>
         </div>
     );

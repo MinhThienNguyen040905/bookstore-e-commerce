@@ -8,8 +8,8 @@ import { useQuery } from '@tanstack/react-query';
 import { getMyOrders } from '@/api/orderApi';
 import type { Order, OrderTimeline } from '@/types/order';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
 import { ReviewModal } from '@/components/reviews/ReviewModal';
+import { formatPrice } from '@/lib/utils'; // Sử dụng formatPrice chung
 
 export default function MyOrdersPage() {
     const [reviewModal, setReviewModal] = useState<{
@@ -29,13 +29,6 @@ export default function MyOrdersPage() {
         queryFn: getMyOrders,
     });
 
-    const formatPrice = (price: string | number) => {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-        }).format(typeof price === 'string' ? parseFloat(price) : price);
-    };
-
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'processing':
@@ -54,13 +47,13 @@ export default function MyOrdersPage() {
     const getStatusText = (status: string) => {
         switch (status) {
             case 'processing':
-                return 'Đang xử lý';
+                return 'Processing';
             case 'shipped':
-                return 'Đang vận chuyển';
+                return 'Shipped';
             case 'delivered':
-                return 'Đã giao hàng';
+                return 'Delivered';
             case 'cancelled':
-                return 'Đã hủy';
+                return 'Cancelled';
             default:
                 return status;
         }
@@ -116,8 +109,8 @@ export default function MyOrdersPage() {
                 <div className="min-h-screen bg-gray-50 py-12 flex items-center justify-center">
                     <div className="text-center">
                         <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold mb-2">Lỗi tải dữ liệu</h2>
-                        <p className="text-gray-600">Không thể tải danh sách đơn hàng</p>
+                        <h2 className="text-2xl font-bold mb-2">Error loading data</h2>
+                        <p className="text-gray-600">Unable to load your orders</p>
                     </div>
                 </div>
                 <Footer />
@@ -130,17 +123,17 @@ export default function MyOrdersPage() {
             <Header />
             <div className="min-h-screen bg-gray-50 py-12">
                 <div className="container mx-auto px-4 max-w-6xl">
-                    <h1 className="text-3xl font-bold mb-8">Đơn hàng của tôi</h1>
+                    <h1 className="text-3xl font-bold mb-8">My Orders</h1>
 
                     {!orders || orders.length === 0 ? (
                         <div className="bg-white rounded-lg p-12 text-center">
                             <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                            <h2 className="text-xl font-semibold mb-2">Chưa có đơn hàng nào</h2>
+                            <h2 className="text-xl font-semibold mb-2">No orders yet</h2>
                             <p className="text-gray-600 mb-6">
-                                Bạn chưa có đơn hàng nào. Hãy bắt đầu mua sắm ngay!
+                                You haven't placed any orders yet. Start shopping now!
                             </p>
                             <Button asChild>
-                                <a href="/">Khám phá sách</a>
+                                <a href="/">Explore Books</a>
                             </Button>
                         </div>
                     ) : (
@@ -153,18 +146,18 @@ export default function MyOrdersPage() {
                                             <div>
                                                 <div className="flex items-center gap-3 mb-2">
                                                     <h3 className="text-lg font-semibold">
-                                                        Đơn hàng #{order.order_id}
+                                                        Order #{order.order_id}
                                                     </h3>
                                                     <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
                                                         {getStatusText(order.status)}
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-gray-600">
-                                                    Đặt ngày {format(new Date(order.order_date), 'dd/MM/yyyy HH:mm', { locale: vi })}
+                                                    Placed on {format(new Date(order.order_date), 'MMM dd, yyyy HH:mm')}
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm text-gray-600">Tổng tiền</p>
+                                                <p className="text-sm text-gray-600">Total Amount</p>
                                                 <p className="text-xl font-bold text-purple-600">
                                                     {formatPrice(order.total_price)}
                                                 </p>
@@ -175,9 +168,8 @@ export default function MyOrdersPage() {
                                     {/* Timeline - Only show if not cancelled */}
                                     {order.status !== 'cancelled' && order.status_history && (
                                         <div className="p-6 border-b bg-gradient-to-r from-purple-50 to-blue-50">
-                                            <h4 className="text-sm font-semibold mb-4 text-gray-700">Trạng thái đơn hàng</h4>
+                                            <h4 className="text-sm font-semibold mb-4 text-gray-700">Order Status</h4>
                                             <div className="relative">
-                                                {/* Vertical Timeline */}
                                                 <div className="space-y-4">
                                                     {order.status_history.map((step: OrderTimeline, index: number) => {
                                                         const Icon = getStepIcon(step.status);
@@ -191,11 +183,10 @@ export default function MyOrdersPage() {
                                                                 )}
 
                                                                 {/* Icon */}
-                                                                <div className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ${
-                                                                    step.isCompleted 
-                                                                        ? 'bg-green-500 text-white' 
+                                                                <div className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ${step.isCompleted
+                                                                        ? 'bg-green-500 text-white'
                                                                         : 'bg-gray-300 text-gray-600'
-                                                                }`}>
+                                                                    }`}>
                                                                     <Icon className="w-4 h-4" />
                                                                 </div>
 
@@ -207,7 +198,7 @@ export default function MyOrdersPage() {
                                                                     <p className="text-sm text-gray-600">{step.description}</p>
                                                                     {step.completedAt && (
                                                                         <p className="text-xs text-gray-500 mt-1">
-                                                                            {format(new Date(step.completedAt), 'dd/MM/yyyy HH:mm', { locale: vi })}
+                                                                            {format(new Date(step.completedAt), 'MMM dd, yyyy HH:mm')}
                                                                         </p>
                                                                     )}
                                                                 </div>
@@ -221,7 +212,7 @@ export default function MyOrdersPage() {
 
                                     {/* Order Items */}
                                     <div className="p-6">
-                                        <h4 className="text-sm font-semibold mb-4 text-gray-700">Sản phẩm</h4>
+                                        <h4 className="text-sm font-semibold mb-4 text-gray-700">Items</h4>
                                         <div className="space-y-4">
                                             {order.order_items.map((item) => (
                                                 <div key={item.order_item_id} className="flex gap-4 items-center">
@@ -231,14 +222,14 @@ export default function MyOrdersPage() {
                                                         className="w-16 h-20 object-cover rounded"
                                                     />
                                                     <div className="flex-1">
-                                                        <h5 className="font-medium">{item.book?.title || 'Sách không tồn tại'}</h5>
+                                                        <h5 className="font-medium">{item.book?.title || 'Book not found'}</h5>
                                                         <p className="text-sm text-gray-600">
-                                                            Số lượng: {item.quantity} × {formatPrice(item.price)}
+                                                            Quantity: {item.quantity} × {formatPrice(item.price)}
                                                         </p>
                                                     </div>
                                                     <div className="flex flex-col items-end gap-2">
                                                         <p className="font-semibold">
-                                                            {formatPrice(parseFloat(item.price) * item.quantity)}
+                                                            {formatPrice(Number(item.price) * item.quantity)}
                                                         </p>
                                                         {/* Review Button - Only show if order is delivered */}
                                                         {order.status === 'delivered' && item.book && (
@@ -253,7 +244,7 @@ export default function MyOrdersPage() {
                                                                 className="gap-2"
                                                             >
                                                                 <Star className="w-4 h-4" />
-                                                                Viết đánh giá
+                                                                Write a Review
                                                             </Button>
                                                         )}
                                                     </div>
@@ -264,7 +255,7 @@ export default function MyOrdersPage() {
                                         {order.promo && (
                                             <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
                                                 <p className="text-sm text-green-800">
-                                                    <strong>Mã giảm giá:</strong> {order.promo.code} (-{order.promo.discount_percent}%)
+                                                    <strong>Promo Code:</strong> {order.promo.code} (-{order.promo.discount_percent}%)
                                                 </p>
                                             </div>
                                         )}
@@ -289,4 +280,3 @@ export default function MyOrdersPage() {
         </>
     );
 }
-

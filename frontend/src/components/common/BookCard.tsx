@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Heart, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 
 // Type cho Book
 interface BookProps {
@@ -86,10 +87,10 @@ export function BookCard({ book, className }: BookCardProps) {
                     <div className="flex items-end justify-between gap-2 mb-4">
                         <div className="flex flex-col">
                             <span className="text-xs text-stone-400 line-through decoration-stone-400">
-                                ${fakeOriginalPrice.toFixed(2)}
+                                {formatPrice(fakeOriginalPrice)}
                             </span>
                             <span className="text-xl font-bold text-[#D9534F]">
-                                ${Number(book.price).toLocaleString('en-US')}
+                                {formatPrice(book.price)}
                             </span>
                         </div>
                     </div>

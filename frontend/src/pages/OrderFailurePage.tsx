@@ -14,35 +14,35 @@ export default function OrderFailurePage() {
     const getErrorMessage = (code: string | null) => {
         switch (code) {
             case '07':
-                return 'Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường).';
+                return 'Transaction suspected of fraud or abnormal activity.';
             case '09':
-                return 'Thẻ/Tài khoản chưa đăng ký dịch vụ InternetBanking tại ngân hàng.';
+                return 'Card/Account has not registered for Internet Banking service at the bank.';
             case '10':
-                return 'Xác thực thông tin thẻ/tài khoản không đúng quá 3 lần.';
+                return 'Card/Account authentication failed more than 3 times.';
             case '11':
-                return 'Đã hết hạn chờ thanh toán. Vui lòng thực hiện lại giao dịch.';
+                return 'Payment timeout. Please try the transaction again.';
             case '12':
-                return 'Thẻ/Tài khoản của bạn bị khóa.';
+                return 'Your card/account is locked.';
             case '13':
-                return 'Bạn đã nhập sai mật khẩu xác thực giao dịch (OTP).';
+                return 'Incorrect transaction authentication password (OTP).';
             case '24':
-                return 'Bạn đã hủy giao dịch.';
+                return 'You have cancelled the transaction.';
             case '51':
-                return 'Tài khoản không đủ số dư để thực hiện giao dịch.';
+                return 'Insufficient account balance to complete the transaction.';
             case '65':
-                return 'Tài khoản đã vượt quá hạn mức giao dịch trong ngày.';
+                return 'Account has exceeded the daily transaction limit.';
             case '75':
-                return 'Ngân hàng thanh toán đang bảo trì.';
+                return 'Payment bank is under maintenance.';
             case '79':
-                return 'Bạn đã nhập sai mật khẩu thanh toán quá số lần quy định.';
+                return 'Incorrect payment password entered too many times.';
             case '97':
-                return 'Chữ ký không hợp lệ (Invalid signature).';
+                return 'Invalid signature.';
             case '01':
-                return 'Không tìm thấy đơn hàng.';
+                return 'Order not found.';
             case '99':
-                return message || 'Lỗi hệ thống. Vui lòng thử lại sau.';
+                return message || 'System error. Please try again later.';
             default:
-                return 'Giao dịch không thành công. Vui lòng thử lại.';
+                return 'Transaction failed. Please try again.';
         }
     };
 
@@ -57,10 +57,10 @@ export default function OrderFailurePage() {
                             <XCircle className="w-12 h-12 text-red-600" />
                         </div>
                         <h1 className="text-4xl font-bold text-gray-900 mb-3">
-                            Thanh toán thất bại!
+                            Payment Failed!
                         </h1>
                         <p className="text-lg text-muted-foreground">
-                            Rất tiếc, giao dịch của bạn không thành công
+                            We're sorry, your transaction was not successful
                         </p>
                     </div>
 
@@ -69,20 +69,20 @@ export default function OrderFailurePage() {
                         <div className="space-y-4">
                             {orderId && (
                                 <div className="flex justify-between items-center border-b pb-3">
-                                    <span className="text-muted-foreground">Mã đơn hàng:</span>
+                                    <span className="text-muted-foreground">Order ID:</span>
                                     <span className="font-semibold text-purple-600">#{orderId}</span>
                                 </div>
                             )}
-                            
+
                             {responseCode && (
                                 <div className="flex justify-between items-center border-b pb-3">
-                                    <span className="text-muted-foreground">Mã lỗi:</span>
+                                    <span className="text-muted-foreground">Error Code:</span>
                                     <span className="font-semibold text-red-600">{responseCode}</span>
                                 </div>
                             )}
 
                             <div className="pt-2">
-                                <p className="text-sm text-muted-foreground mb-2">Lý do:</p>
+                                <p className="text-sm text-muted-foreground mb-2">Reason:</p>
                                 <p className="font-medium text-gray-900">
                                     {getErrorMessage(responseCode)}
                                 </p>
@@ -92,33 +92,33 @@ export default function OrderFailurePage() {
 
                     {/* Actions */}
                     <div className="bg-white rounded-xl shadow-sm p-6">
-                        <h2 className="text-lg font-semibold mb-4">Bạn có thể:</h2>
+                        <h2 className="text-lg font-semibold mb-4">What you can do:</h2>
                         <div className="space-y-3">
                             <Button asChild size="lg" className="w-full">
                                 <Link to="/cart">
                                     <ShoppingCart className="w-4 h-4 mr-2" />
-                                    Quay lại giỏ hàng
+                                    Back to Cart
                                 </Link>
                             </Button>
 
                             <Button asChild variant="outline" size="lg" className="w-full">
                                 <Link to="/">
                                     <Home className="w-4 h-4 mr-2" />
-                                    Về trang chủ
+                                    Back to Home
                                 </Link>
                             </Button>
                         </div>
 
                         <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                             <p className="text-sm text-blue-800">
-                                💡 <strong>Gợi ý:</strong> Nếu bạn gặp vấn đề khi thanh toán, vui lòng kiểm tra lại thông tin thẻ hoặc liên hệ ngân hàng của bạn để được hỗ trợ.
+                                💡 <strong>Tip:</strong> If you're having trouble with payment, please check your card details again or contact your bank for assistance.
                             </p>
                         </div>
                     </div>
 
                     {/* Support Info */}
                     <div className="mt-6 text-center text-sm text-muted-foreground">
-                        <p>Cần hỗ trợ? Liên hệ với chúng tôi:</p>
+                        <p>Need help? Contact us:</p>
                         <p className="font-medium text-purple-600 mt-1">
                             Email: support@b-world.com | Hotline: 1900-xxxx
                         </p>
@@ -129,4 +129,3 @@ export default function OrderFailurePage() {
         </>
     );
 }
-

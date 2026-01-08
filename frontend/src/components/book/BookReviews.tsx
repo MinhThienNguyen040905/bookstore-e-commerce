@@ -23,24 +23,24 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
-    // State cho form review
+    // State for review form
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
     const [hoveredRating, setHoveredRating] = useState(0);
 
-    // Mutation gửi đánh giá
+    // Mutation to submit review
     const reviewMutation = useMutation({
         mutationFn: createReview,
         onSuccess: () => {
-            showToast.success('Đánh giá của bạn đã được gửi thành công!');
+            showToast.success('Review submitted successfully!');
             setComment('');
             setRating(5);
-            // Refresh lại dữ liệu sách để hiện review mới
+            // Refresh book data to show the new review
             queryClient.invalidateQueries({ queryKey: ['book', bookId] });
         },
         onError: (error: any) => {
-            // Xử lý lỗi từ backend (đặc biệt là lỗi 403 chưa mua hàng)
-            const msg = error.response?.data?.msg || error.response?.data?.message || 'Gửi đánh giá thất bại';
+            // Handle backend errors (especially 403 if book not purchased)
+            const msg = error.response?.data?.msg || error.response?.data?.message || 'Failed to submit review';
             showToast.error(msg);
         }
     });
@@ -54,7 +54,7 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
         }
 
         if (!comment.trim()) {
-            showToast.error('Vui lòng nhập nội dung đánh giá');
+            showToast.error('Please enter your review content');
             return;
         }
 
@@ -68,22 +68,22 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
     return (
         <section className={cn("space-y-10", className)}>
 
-            {/* --- PHẦN NHẬP ĐÁNH GIÁ (REVIEW FORM) --- */}
+            {/* --- REVIEW FORM SECTION --- */}
             <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
-                <h3 className="text-xl font-bold text-stone-900 mb-4">Viết đánh giá của bạn</h3>
+                <h3 className="text-xl font-bold text-stone-900 mb-4">Write your review</h3>
 
                 {!user ? (
                     <div className="text-center py-6 bg-stone-50 rounded-lg">
-                        <p className="text-stone-600 mb-3">Vui lòng đăng nhập để viết đánh giá cho sản phẩm này.</p>
+                        <p className="text-stone-600 mb-3">Please login to review this product</p>
                         <Button onClick={() => navigate('/login', { state: { from: location.pathname } })} variant="outline">
-                            Đăng nhập ngay
+                            Log in now
                         </Button>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmitReview} className="space-y-4">
                         {/* Star Rating Input */}
                         <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-stone-700">Đánh giá:</span>
+                            <span className="text-sm font-medium text-stone-700">Rating:</span>
                             <div className="flex items-center">
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <button
@@ -106,13 +106,13 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
                                 ))}
                             </div>
                             <span className="text-sm text-stone-500 ml-2">
-                                {rating === 5 ? 'Tuyệt vời' : rating === 4 ? 'Tốt' : rating === 3 ? 'Bình thường' : rating === 2 ? 'Tệ' : 'Rất tệ'}
+                                {rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Average' : rating === 2 ? 'Poor' : 'Very Poor'}
                             </span>
                         </div>
 
                         {/* Comment Input */}
                         <Textarea
-                            placeholder="Chia sẻ cảm nghĩ của bạn về cuốn sách này..."
+                            placeholder="Share your thoughts about this book..."
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             className="min-h-[100px] bg-stone-50 border-stone-200 focus:bg-white transition-colors"
@@ -126,11 +126,11 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
                             >
                                 {reviewMutation.isPending ? (
                                     <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang gửi...
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...
                                     </>
                                 ) : (
                                     <>
-                                        <Send className="w-4 h-4 mr-2" /> Gửi đánh giá
+                                        <Send className="w-4 h-4 mr-2" /> Submit Review
                                     </>
                                 )}
                             </Button>
@@ -139,15 +139,15 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
                 )}
             </div>
 
-            {/* --- DANH SÁCH ĐÁNH GIÁ --- */}
+            {/* --- LIST OF REVIEWS --- */}
             <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-[#2F4F4F]">
-                    Đánh giá từ khách hàng ({reviews.length})
+                    Customer Reviews ({reviews.length})
                 </h2>
 
                 {reviews.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground italic bg-stone-50 rounded-lg">
-                        Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá!
+                        No reviews yet. Be the first to review!
                     </div>
                 ) : (
                     <div className="grid gap-6">
@@ -168,7 +168,7 @@ export function BookReviews({ bookId, reviews, className }: BookReviewsProps) {
                                 {/* Content */}
                                 <div className="flex-1 space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="font-bold text-stone-900">{review.user?.name || 'Người dùng ẩn danh'}</h3>
+                                        <h3 className="font-bold text-stone-900">{review.user?.name || 'Anonymous User'}</h3>
                                         <time className="text-xs text-stone-400">
                                             {format(new Date(review.review_date), 'dd/MM/yyyy HH:mm')}
                                         </time>
