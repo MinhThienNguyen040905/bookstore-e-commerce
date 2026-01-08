@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Eye, PackageOpen, XCircle, AlertTriangle } f
 import { useMyOrders, useCancelOrder } from '@/hooks/useOrders'; // Import Hook mới
 import { OrderDetail } from '@/components/profile/OrderDetail';
 import type { Order } from '@/types/order';
-import { cn } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils';
 
 export function OrdersTab() {
     const { data: orders, isLoading, isError } = useMyOrders();
@@ -120,7 +120,7 @@ export function OrdersTab() {
                                             {getStatusBadge(order.status)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-stone-900">
-                                            ${Number(order.total_price).toLocaleString('en-US')}
+                                            {formatPrice(order.total_price)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex items-center justify-end gap-2">

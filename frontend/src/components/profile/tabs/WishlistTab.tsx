@@ -4,6 +4,7 @@ import { useWishlist, useRemoveFromWishlist } from '@/hooks/useWishlist';
 import { Button } from '@/components/ui/button';
 import { Trash2, ShoppingCart, HeartOff, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatPrice } from '@/lib/utils';
 
 export function WishlistTab() {
     const { data: wishlistItems, isLoading, isError } = useWishlist();
@@ -80,7 +81,7 @@ export function WishlistTab() {
 
                             <div className="mt-auto pt-4 flex items-center justify-between">
                                 <span className="text-lg font-bold text-[#00bbb6]">
-                                    ${item.book.price.toLocaleString('en-US')}
+                                    {formatPrice(item.book.price)}
                                 </span>
                                 <span className="text-[10px] text-stone-400">
                                     Added: {format(new Date(item.added_at), 'dd/MM/yyyy')}

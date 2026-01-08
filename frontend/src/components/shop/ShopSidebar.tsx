@@ -71,7 +71,8 @@ export function ShopSidebar({ className, onClose }: ShopSidebarProps) {
                 <h3 className="text-sm font-bold uppercase tracking-wider text-stone-900 border-l-4 border-[#008080] pl-3">Price Range</h3>
                 <div className="flex items-center gap-2">
                     <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></span> 
+                        {/* // ẩn vnd */}
                         <input
                             type="number" placeholder="0"
                             className="w-full rounded-md border-stone-200 text-sm py-2 pl-6 pr-2 focus:ring-[#008080] focus:border-[#008080] bg-stone-50"
@@ -80,7 +81,8 @@ export function ShopSidebar({ className, onClose }: ShopSidebarProps) {
                     </div>
                     <span className="text-stone-300">-</span>
                     <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></span> 
+                         {/* ẩn vnd */}
                         <input
                             type="number" placeholder="Max"
                             className="w-full rounded-md border-stone-200 text-sm py-2 pl-6 pr-2 focus:ring-[#008080] focus:border-[#008080] bg-stone-50"

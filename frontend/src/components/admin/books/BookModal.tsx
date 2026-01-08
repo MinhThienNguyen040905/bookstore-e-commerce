@@ -379,7 +379,7 @@ export function BookModal({ book, isOpen, onClose, onSave, isSaving }: BookModal
                                     <Input type="date" value={formData.release_date} onChange={(e) => setFormData({ ...formData, release_date: e.target.value })} disabled={!isEditing} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Price ($)</Label>
+                                    <Label>Price (VND)</Label>
                                     <Input type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })} disabled={!isEditing} />
                                 </div>
                                 <div className="space-y-2">
