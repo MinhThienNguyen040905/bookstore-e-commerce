@@ -10,13 +10,13 @@ const api = axios.create({
     },
 });
 
-// Interceptor xử lý response mới từ backend
+// Response interceptor to handle new backend format
 api.interceptors.response.use(
     (response) => {
         const { success, data } = response.data;
         if (success) return { ...response, data };
 
-        const error = new Error(response.data.message || 'Lỗi từ server');
+        const error = new Error(response.data.message || 'Server error');
         (error as any).response = response;
         throw error;
     },
@@ -24,11 +24,11 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // TRÁNH VÒNG LẶP VÔ HẠN: Không retry nếu chính request refresh token bị 401
+        // PREVENT INFINITE LOOP: Do not retry if the refresh token request itself fails with 401
         if (
             error.response?.status === 401 &&
             !originalRequest._retry &&
-            // QUAN TRỌNG: nếu URL chính là refresh-token thì KHÔNG được retry
+            // IMPORTANT: Do not retry if the failing request is the refresh-token endpoint
             !originalRequest.url?.includes('/users/refresh-token')
         ) {
             originalRequest._retry = true;
@@ -36,28 +36,28 @@ api.interceptors.response.use(
             try {
                 const { data } = await api.post('/users/refresh-token');
 
-                // Backend trả: { success: true, data: { accessToken: "..." } }
+                // Backend returns: { success: true, data: { accessToken: "..." } }
                 const newAccessToken = data?.accessToken || data?.data?.accessToken;
 
                 if (!newAccessToken) {
-                    throw new Error('Không nhận được access token mới');
+                    throw new Error('No new access token received');
                 }
 
-                // Cập nhật token trong store + header
+                // Update token in store and request header
                 useAuthStore.getState().setAccessToken(newAccessToken);
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
-                // Thử lại request ban đầu
+                // Retry the original request
                 return api(originalRequest);
             } catch (refreshError) {
-                // Refresh token hết hạn hoặc sai → bắt buộc logout
+                // Refresh token expired or invalid → force logout
                 useAuthStore.getState().clearAuth();
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
             }
         }
 
-        // Các lỗi khác (mạng, 500, hoặc refresh token fail)
+        // Other errors (network, 500, or refresh token failure)
         if (error.response) {
             const msg = error.response.data?.message || error.message;
             const err = new Error(msg);

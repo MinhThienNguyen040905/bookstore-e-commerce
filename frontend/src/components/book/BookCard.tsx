@@ -2,6 +2,7 @@ import { useAddToCart } from '@/hooks/useAddToCart';
 import { Link } from 'react-router-dom';
 import type { CardBook } from '@/types/book';
 import { cn } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 // Đã xóa import { Star } vì không còn dùng
 
 interface BookCardProps {
@@ -45,7 +46,7 @@ export function BookCard({ book, className }: BookCardProps) {
 
                     {/* Price - Dùng mt-auto để đẩy giá xuống đáy nếu tên sách ngắn */}
                     <p className="text-gray-900 font-semibold text-lg mt-auto">
-                        ${Number(book.price).toLocaleString('en-US')}
+                        {formatPrice(book.price)}
                     </p>
                 </div>
 
