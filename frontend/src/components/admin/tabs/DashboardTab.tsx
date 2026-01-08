@@ -4,6 +4,8 @@ import { DollarSign, UserPlus, ShoppingBag, TrendingUp, PackageOpen, MoreVertica
 import { format } from 'date-fns';
 // Import Recharts
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+// Import formatPrice util
+import { formatPrice } from '@/lib/utils';
 
 export function DashboardTab() {
     const { data: stats, isLoading, isError } = useAdminStats();
@@ -19,32 +21,28 @@ export function DashboardTab() {
     if (isError || !stats) {
         return (
             <div className="p-4 bg-red-50 text-red-600 rounded-lg border border-red-100">
-                Không thể tải dữ liệu thống kê. Vui lòng thử lại sau.
+                Failed to load statistics data. Please try again later.
             </div>
         );
     }
 
-    // Tính toán chỉ số phụ
+    // Calculate Average Order Value
     const avgOrderValue = stats.totalOrders > 0
         ? stats.totalRevenue / stats.totalOrders
         : 0;
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-            {/* HEADER */}
+            {/* HEADER - Download button removed */}
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold font-display text-stone-900">Dashboard Overview</h2>
-                <button className="px-4 py-2 bg-[#0df2d7] text-stone-900 rounded-lg text-sm font-bold shadow-sm hover:bg-[#00dcc3] transition-colors">
-                    Download Report
-                </button>
             </div>
 
             {/* STATS GRID */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     title="Total Revenue"
-                    value={`$${stats.totalRevenue.toLocaleString('en-US')}`}
+                    value={formatPrice(stats.totalRevenue)} // VND Currency
                     trend="Year to date"
                     icon={<DollarSign className="w-6 h-6 text-green-700" />}
                     bgIcon="bg-green-100"
@@ -52,7 +50,7 @@ export function DashboardTab() {
                 />
                 <StatCard
                     title="Total Orders"
-                    value={stats.totalOrders.toLocaleString('en-US')}
+                    value={stats.totalOrders.toLocaleString('en-US')} // English number format (1,000)
                     trend="Lifetime"
                     icon={<ShoppingBag className="w-6 h-6 text-blue-700" />}
                     bgIcon="bg-blue-100"
@@ -60,7 +58,7 @@ export function DashboardTab() {
                 />
                 <StatCard
                     title="Total Users"
-                    value={stats.totalUsers.toLocaleString('en-US')}
+                    value={stats.totalUsers.toLocaleString('en-US')} // English number format
                     trend="Customers"
                     icon={<UserPlus className="w-6 h-6 text-orange-700" />}
                     bgIcon="bg-orange-100"
@@ -68,7 +66,7 @@ export function DashboardTab() {
                 />
                 <StatCard
                     title="Avg. Order Value"
-                    value={`$${avgOrderValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+                    value={formatPrice(avgOrderValue)} // VND Currency
                     trend="Estimated"
                     icon={<TrendingUp className="w-6 h-6 text-[#009b8f]" />}
                     bgIcon="bg-[#0df2d7]/20"
@@ -78,8 +76,7 @@ export function DashboardTab() {
 
             {/* CHARTS SECTION */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* REVENUE CHART (DATA THẬT) */}
+                {/* REVENUE CHART */}
                 <div className="lg:col-span-2 rounded-xl border border-stone-200 bg-white p-6 shadow-sm flex flex-col">
                     <div className="flex justify-between items-end mb-6">
                         <div>
@@ -88,11 +85,10 @@ export function DashboardTab() {
                         </div>
                         <div className="text-right">
                             <p className="text-stone-900 text-2xl font-bold leading-none">
-                                ${stats.totalRevenue.toLocaleString('en-US')}
+                                {formatPrice(stats.totalRevenue)}
                             </p>
                         </div>
                     </div>
-
                     <div className="flex-1 w-full min-h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={stats.monthlyRevenue} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -114,11 +110,12 @@ export function DashboardTab() {
                                     axisLine={false}
                                     tickLine={false}
                                     tick={{ fill: '#6B7280', fontSize: 12 }}
-                                    tickFormatter={(value) => `$${value >= 1000 ? value / 1000 + 'k' : value}`}
+                                    // Y-Axis formatting (1k, 2k...)
+                                    tickFormatter={(value) => `${value >= 1000 ? value / 1000 + 'k' : value}`}
                                 />
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #E5E7EB', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                                    formatter={(value: number) => [formatPrice(value), 'Revenue']}
                                 />
                                 <Area
                                     type="monotone"
@@ -138,7 +135,6 @@ export function DashboardTab() {
                 <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
                     <h3 className="text-stone-900 font-bold mb-6">Top Categories</h3>
                     <div className="flex flex-col gap-5">
-                        {/* Tạm thời hardcode vì API chưa trả về Categories, bạn có thể bổ sung API sau */}
                         <CategoryBar label="Fiction" percent="45%" color="bg-[#0df2d7]" width="45%" />
                         <CategoryBar label="Sci-Fi" percent="25%" color="bg-[#0df2d7]/80" width="25%" />
                         <CategoryBar label="Biography" percent="15%" color="bg-[#0df2d7]/60" width="15%" />
@@ -226,10 +222,8 @@ function TableRow({ order }: { order: any }) {
         shipped: "bg-blue-100 text-blue-800",
         cancelled: "bg-red-100 text-red-800"
     };
-
     const style = statusColors[order.status] || "bg-gray-100 text-gray-800";
 
-    // Logic hiển thị tên sách
     const firstBook = order.OrderItems[0]?.Book?.title || "Unknown Book";
     const remainingCount = order.OrderItems.length - 1;
     const itemsDisplay = remainingCount > 0 ? `${firstBook} (+${remainingCount} others)` : firstBook;
@@ -247,7 +241,7 @@ function TableRow({ order }: { order: any }) {
                 {itemsDisplay}
             </td>
             <td className="px-6 py-4 text-sm font-bold text-stone-900">
-                ${Number(order.total_price).toLocaleString('en-US')}
+                {formatPrice(order.total_price)}
             </td>
             <td className="px-6 py-4">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${style}`}>

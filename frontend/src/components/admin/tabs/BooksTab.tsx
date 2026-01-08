@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Search, Plus, Trash2, Edit, AlertTriangle, PackageOpen } from 'lucide-react';
 import { BookModal } from '../books/BookModal';
 import { Input } from '@/components/ui/input';
+import { formatPrice } from '@/lib/utils';
 
 export function BooksTab() {
     const [page, setPage] = useState(1);
@@ -98,7 +99,7 @@ export function BooksTab() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-stone-600">{book.Publisher?.name || 'N/A'}</td>
-                                    <td className="px-6 py-4 text-sm font-bold text-stone-900">${book.price.toLocaleString()}</td>
+                                    <td className="px-6 py-4 text-sm font-bold text-stone-900">{formatPrice(book.price)}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded text-xs font-bold ${book.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                             {book.stock}

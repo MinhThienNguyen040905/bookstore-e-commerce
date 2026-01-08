@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useBookSearch } from '@/hooks/useBookSearch';
 import type { SearchBook } from '@/hooks/useBookSearch';
-import { cn } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils';
 
 export function SearchBar() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -99,7 +99,7 @@ export function SearchBar() {
 
                                     {/* Giá tiền */}
                                     <div className="font-bold text-sm text-[#009b8f]">
-                                        ${book.price.toLocaleString()}
+                                        {formatPrice(book.price)}
                                     </div>
                                 </div>
                             ))}

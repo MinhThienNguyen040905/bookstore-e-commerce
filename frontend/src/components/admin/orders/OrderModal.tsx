@@ -2,7 +2,7 @@
 import { useAdminOrderDetail } from '@/hooks/useAdminOrders';
 import { X, User, MapPin, Phone, CreditCard, Calendar, Package, Loader2, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils';
 
 interface OrderModalProps {
     orderId: number | null;
@@ -66,7 +66,7 @@ export function OrderModal({ orderId, onClose }: OrderModalProps) {
                                                     <div className="flex justify-between items-end mt-2">
                                                         <p className="text-xs text-stone-500">Qty: {item.quantity}</p>
                                                         <p className="font-bold text-stone-900 text-sm">
-                                                            ${Number(item.price).toLocaleString()}
+                                                            {formatPrice(item.price)}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -88,7 +88,7 @@ export function OrderModal({ orderId, onClose }: OrderModalProps) {
                                         )}
                                         <div className="flex justify-between text-base font-bold text-stone-900 pt-2">
                                             <span>Total Amount</span>
-                                            <span className="text-[#009b8f]">${order.total_price.toLocaleString()}</span>
+                                            <span className="text-[#009b8f]">{formatPrice(order.total_price)}</span>
                                         </div>
                                     </div>
                                 </div>

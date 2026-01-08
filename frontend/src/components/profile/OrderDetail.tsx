@@ -2,7 +2,7 @@
 import type { Order } from '@/types/order';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Check, X, MapPin, Truck, Package } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils';
 import { format } from 'date-fns';
 
 interface OrderDetailProps {
@@ -73,7 +73,7 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
                                         <p className="text-stone-500 text-sm mt-1">Qty: {item.quantity}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="font-bold text-stone-900">${formatCurrency(item.price)}</p>
+                                        <p className="font-bold text-stone-900">{formatPrice(item.price)}</p>
                                     </div>
                                 </div>
                             ))}

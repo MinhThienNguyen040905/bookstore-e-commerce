@@ -4,7 +4,7 @@ import { useAdminOrders, useUpdateOrderStatus } from '@/hooks/useAdminOrders';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Eye, PackageOpen, Calendar, User } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils';
 // Import Modal mới
 import { OrderModal } from '../orders/OrderModal';
 
@@ -72,7 +72,7 @@ export function OrdersTab() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm font-bold text-stone-900">
-                                        ${Number(order.total_price).toLocaleString('en-US')}
+                                        {formatPrice(order.total_price)}
                                     </td>
 
                                     <td className="px-6 py-4">

@@ -10,7 +10,7 @@ import {
     Filter, X, Save, Loader2, CheckCircle, Clock
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils';
 
 export function DiscountsTab() {
     // State
@@ -119,7 +119,7 @@ export function DiscountsTab() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-stone-600">
-                                                ${Number(promo.min_amount).toLocaleString('en-US')}
+                                                {formatPrice(promo.min_amount)}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-stone-600">
                                                 <div className="flex items-center gap-1.5">
@@ -246,7 +246,7 @@ function AddPromoModal({ isOpen, onClose, onSave, isSaving }: { isOpen: boolean,
                                 />
                             </div>
                             <div>
-                                <Label>Min Order ($)</Label>
+                                <Label>Min Order (VND)</Label>
                                 <Input
                                     type="number"
                                     min="0"
