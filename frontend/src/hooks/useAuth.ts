@@ -22,7 +22,7 @@ export const useAuth = () => {
         },
         onError: (_err, _vars, context) => {
             showToast.dismiss(context?.toastId);
-            showToast.error('Login failed');
+            showToast.error('Login failed, Incorrect email or password');
         },
     });
 
@@ -80,7 +80,7 @@ export const useAuth = () => {
     });
 
     return {
-        login: loginMutation.mutate,
+        login: loginMutation.mutateAsync,
         logout: logoutMutation.mutate,
         isLoggingIn: loginMutation.isPending,
         isLoggingOut: logoutMutation.isPending,

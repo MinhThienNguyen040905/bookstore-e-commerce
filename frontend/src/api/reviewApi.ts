@@ -8,8 +8,12 @@ export interface CreateReviewBody {
 }
 
 export const createReview = async (body: CreateReviewBody) => {
-    const { data } = await api.post('/reviews', body);
-    return data;
+    // Sửa: Đừng destructure { data } ngay, hãy lấy response gốc
+    const response = await api.post('/reviews', body);
+
+    // Nếu axios interceptor của bạn đã trả về response.data, thì dòng này trả về data luôn
+    // Nếu axios trả về full response object, thì lấy response.data
+    return response.data || response;
 };
 
 export const getBookReviews = async (book_id: number) => {
