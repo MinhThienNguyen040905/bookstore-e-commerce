@@ -16,7 +16,9 @@ import multer from 'multer';
 import fs from 'fs';
 
 // 2. CẤU HÌNH MULTER (Lưu file tạm vào thư mục 'uploads/')
-const upload = multer({ dest: 'uploads/' });
+// const upload = multer({ dest: 'uploads/' });
+import os from 'os';
+const upload = multer({ dest: os.tmpdir() });
 const uploadAvatar = upload.single('avatar'); // 'avatar' là tên key mà frontend gửi lên
 
 

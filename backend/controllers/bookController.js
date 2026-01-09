@@ -12,7 +12,9 @@ import cloudinary from '../cloudinary.js';
 import multer from 'multer';
 import fs from 'fs';
 
-const upload = multer({ dest: 'uploads/' });
+// const upload = multer({ dest: 'uploads/' });
+import os from 'os';
+const upload = multer({ dest: os.tmpdir() });
 const uploadCover = upload.single('cover_image');
 
 
