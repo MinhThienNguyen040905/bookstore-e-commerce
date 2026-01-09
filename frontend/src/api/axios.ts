@@ -29,7 +29,8 @@ api.interceptors.response.use(
             error.response?.status === 401 &&
             !originalRequest._retry &&
             // IMPORTANT: Do not retry if the failing request is the refresh-token endpoint
-            !originalRequest.url?.includes('/users/refresh-token')
+            !originalRequest.url?.includes('/users/refresh-token') &&
+            !originalRequest.url?.includes('/users/login')
         ) {
             originalRequest._retry = true;
 
