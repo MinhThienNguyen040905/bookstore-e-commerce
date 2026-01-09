@@ -116,6 +116,7 @@ npm install
      cp .env.example .env
      ```
    - Mở file `.env` và điền các thông tin cấu hình thực tế của bạn (Database, JWT Secret, Cloudinary, Email, VNPAY...).
+   - Hãy đảm bảo thêm .env vào .gitignore để không track nhầm thay đổi của .env.
 
 
 4. **Khởi tạo Database:**
