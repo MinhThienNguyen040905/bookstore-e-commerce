@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -7,9 +8,12 @@ import { resetPasswordSchema, type ResetPasswordData } from '@/schemas/otp.schem
 import { resetPassword } from '@/api/authApi';
 import { showToast } from '@/lib/toast';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPasswordCompleteForm({ email, otp }: { email: string; otp: string }) {
     const navigate = useNavigate();
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     // 1. SỬA LỖI HOOK: Gọi useForm TRƯỚC khi return
     const {
@@ -57,27 +61,53 @@ export default function ResetPasswordCompleteForm({ email, otp }: { email: strin
             <input type="hidden" {...register('otp')} />
 
             <div className="space-y-2">
-                {/* 3. SỬA LỖI TYPO: classname -> className */}
                 <Label htmlFor="newPassword" className="text-stone-600 font-medium">New Password</Label>
-                <Input
-                    id="newPassword"
-                    type="password"
-                    placeholder="Enter new password"
-                    {...register('newPassword')}
-                    className="h-12 border-stone-300 focus:border-[#0df2d7] focus:ring-[#0df2d7] bg-white rounded-lg"
-                />
+                <div className="relative">
+                    <Input
+                        id="newPassword"
+                        type={showNewPassword ? 'text' : 'password'}
+                        placeholder="Enter new password"
+                        {...register('newPassword')}
+                        className="h-12 border-stone-300 focus:border-[#0df2d7] focus:ring-[#0df2d7] bg-white rounded-lg pr-12"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors focus:outline-none"
+                        aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                    >
+                        {showNewPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                        ) : (
+                            <Eye className="w-5 h-5" />
+                        )}
+                    </button>
+                </div>
                 {errors.newPassword && <p className="text-sm text-red-500">{errors.newPassword.message}</p>}
             </div>
             <div className="space-y-2">
-                {/* 3. SỬA LỖI TYPO: classname -> className */}
                 <Label htmlFor="confirmPassword" className="text-stone-600 font-medium">Confirm Password</Label>
-                <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm new password"
-                    {...register('confirmPassword')}
-                    className="h-12 border-stone-300 focus:border-[#0df2d7] focus:ring-[#0df2d7] bg-white rounded-lg"
-                />
+                <div className="relative">
+                    <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Confirm new password"
+                        {...register('confirmPassword')}
+                        className="h-12 border-stone-300 focus:border-[#0df2d7] focus:ring-[#0df2d7] bg-white rounded-lg pr-12"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors focus:outline-none"
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                        {showConfirmPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                        ) : (
+                            <Eye className="w-5 h-5" />
+                        )}
+                    </button>
+                </div>
                 {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
             </div>
             <Button
