@@ -99,6 +99,27 @@ export function OrdersTab() {
                         </tbody>
                     </table>
                 </div>
+                <div className="flex items-center justify-between px-6 py-4 border-t border-stone-200 bg-stone-50">
+                    <span className="text-xs text-stone-500">
+                        Page {pagination.currentPage} of {pagination.totalPages}
+                    </span>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline" size="sm"
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <Button
+                            variant="outline" size="sm"
+                            onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                            disabled={page === pagination.totalPages}
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
+                    </div>
+                </div>
 
                 {/* ... Pagination giữ nguyên ... */}
             </div>
