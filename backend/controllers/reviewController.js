@@ -35,8 +35,8 @@ const addReview = async (req, res) => {
         });
 
         if (!deliveredOrder) {
-            return res.status(403).json({ 
-                msg: 'Bạn chỉ có thể đánh giá sách sau khi đơn hàng đã được giao thành công' 
+            return res.status(403).json({
+                msg: 'Bạn chỉ có thể đánh giá sách sau khi đơn hàng đã được giao thành công'
             });
         }
         // ===== END VERIFIED REVIEWS LOGIC =====
@@ -47,9 +47,18 @@ const addReview = async (req, res) => {
             rating,
             comment,
         });
-        res.status(201).json(review);
+        return res.status(201).json({
+            success: true,
+            message: 'Đánh giá thành công',
+            data: review
+        });
     } catch (err) {
-        res.status(500).json({ err: err.message });
+        console.error("Add Review Error:", err); // Log để debug server
+        // SỬA: Đổi 'err' thành 'message' để frontend bắt được
+        return res.status(500).json({
+            success: false,
+            message: err.message || 'Lỗi server khi lưu đánh giá'
+        });
     }
 };
 
